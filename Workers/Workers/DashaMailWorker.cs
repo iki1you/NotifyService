@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Workers.Workers
+{
+    public class DashaMailWorker(ILogger<DashaMailWorker> logger) : BackgroundService
+    {
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                if (logger.IsEnabled(LogLevel.Information))
+                {
+                    logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                }
+                await Task.Delay(1000, stoppingToken);
+            }
+        }
+    }
+}

@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Core/">
+    <Project Path="API/API.csproj" />
+    <Project Path="Data/Data.csproj" />
+    <Project Path="Orchestrator/Orchestrator.csproj" />
+  </Folder>
+  <Folder Name="/Workers/">
+    <Project Path="Adapters/Adapters.csproj" />
+    <Project Path="Workers/Workers.csproj" />
+    <Project Path="Сhannels/Сhannels.csproj" />
+  </Folder>
+  <Project Path="Infrastracture/Abstractions.csproj" />
+</Solution>
