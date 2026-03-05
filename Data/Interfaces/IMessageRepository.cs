@@ -1,6 +1,5 @@
-﻿using Abstractions.Models;
-using Abstractions.Models.QueueEntities;
-using ChildrenCharity.Mailing.Core.Infrastructure.Common;
+﻿using ChildrenCharity.Mailing.Core.Infrastructure.Common;
+using Data.Entities;
 
 namespace Data.Interfaces
 {

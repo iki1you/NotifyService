@@ -1,6 +1,6 @@
 ﻿using Abstractions.Models;
-using Abstractions.Models.QueueEntities;
 using ChildrenCharity.Mailing.Core.Infrastructure.Common;
+using Data.Entities;
 using Data.Interfaces;
 using Orchestrator.Interfaces;
 using Orchestrator.Models;
@@ -8,13 +8,13 @@ using Queue.Interfaces;
 
 namespace Orchestrator.Services
 {
-    public class Orchestrator : IOrchestratorService
+    public class OrchestratorService : IOrchestratorService
     {
         private readonly IMessageRepository _messageRepo;
         private readonly ICredentialService _credentialService;
         private readonly IQueuePublisher _publisher;
 
-        public Orchestrator(IMessageRepository messageRepo, ICredentialService routingService, IQueuePublisher publisher)
+        public OrchestratorService(IMessageRepository messageRepo, ICredentialService routingService, IQueuePublisher publisher)
         {
             _messageRepo = messageRepo;
             _credentialService = routingService;
@@ -68,7 +68,7 @@ namespace Orchestrator.Services
                         continue;
                     }
 
-                    var task = new MessageTask
+                    var taskEntity = new MessageTask
                     {
                         RequestId = request.RequestId,
                         ProjectId = projectId,
@@ -80,10 +80,23 @@ namespace Orchestrator.Services
                         CreatedAt = DateTime.UtcNow
                     };
 
-                    await _messageRepo.AddMessageTaskAsync(task);
+                    await _messageRepo.AddMessageTaskAsync(taskEntity);
+
+                    var taskDto = new MessageTaskDTO
+                    {
+                        Id = taskEntity.Id,
+                        RequestId = taskEntity.RequestId,
+                        ProjectId = taskEntity.ProjectId,
+                        CredentialId = taskEntity.CredentialId,
+                        Content = taskEntity.Content,
+                        Recipient = taskEntity.Recipient,
+                        Channel = taskEntity.Channel,
+                        Status = taskEntity.Status,
+                        CreatedAt = taskEntity.CreatedAt
+                    };
 
                     var queueName = $"{credential.AdapterType}.{credential.CredentialId}";
-                    await _publisher.PublishAsync(queueName, task);
+                    await _publisher.PublishAsync(queueName, taskDto);
                 }
                 catch (Exception ex)
                 {

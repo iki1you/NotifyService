@@ -1,4 +1,4 @@
-﻿using Abstractions.Models;
+﻿using Data.Entities;
 
 namespace Data.Repositories
 {

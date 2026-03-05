@@ -1,5 +1,4 @@
-﻿using Abstractions.Models;
-using Abstractions.Models.QueueEntities;
+﻿using Data.Entities;
 using Data.Interfaces;
 using Data.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +19,7 @@ namespace Data.Extensions
             services.AddScoped<IRepository<MessageRequest>, MessageRequestRepository>();
             services.AddScoped<IRepository<MessageTask>, MessageTaskRepository>();
             services.AddScoped<IMessageRepository, MessageRepository>();
+            services.AddScoped<ICredentialRepository, CredentialRepository>();
 
             return services;
         }

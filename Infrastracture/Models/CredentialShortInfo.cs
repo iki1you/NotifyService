@@ -1,4 +1,4 @@
-﻿namespace Abstractions.Models.Credentials
+﻿namespace Abstractions.Models
 {
     public class CredentialShortInfo
     {

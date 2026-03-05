@@ -1,4 +1,4 @@
-﻿namespace Abstractions.Models
+namespace Abstractions.Models
 {
     public interface IHasId<TKey>
     {

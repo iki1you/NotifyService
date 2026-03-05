@@ -1,7 +1,8 @@
 ﻿using Abstractions.Models;
-using Abstractions.Models.QueueEntities;
 using ChildrenCharity.Mailing.Core.Infrastructure.Common;
+using Data.Entities;
 using Data.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Data.Repositories
 {

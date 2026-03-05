@@ -6,7 +6,7 @@ using Orchestrator.Models;
 namespace API.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class MessageSendController : ControllerBase
     {
         private readonly IOrchestratorService _orchestratorService;
@@ -20,10 +20,16 @@ namespace API.Controllers
             _accountService = accountService;
         }
 
-        [HttpGet(Name = "SendMessage")]
-        [ProducesDefaultResponseType(typeof(OperationResult<SendMessageResponse>))]
-        [ProducesResponseType<SendMessageResponse>(StatusCodes.Status200OK)]
-        [ProducesResponseType<OperationResult>(StatusCodes.Status400BadRequest)]
+        /// <summary>
+        /// Отправить сообщение через указанные каналы
+        /// </summary>
+        /// <param name="request">Запрос на отправку</param>
+        /// <returns>Результат отправки с URL для проверки статуса</returns>
+        /// <response code="200">Сообщение успешно добавлено в очередь</response>
+        /// <response code="400">Ошибка валидации или дубликат запроса</response>
+        [HttpPost]
+        [ProducesResponseType(typeof(SendMessageResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OperationResult), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<OperationResult<SendMessageResponse>>> SendMessage([FromBody] SendMessageRequest request)
         {
             var projectId = await _accountService.GetProjectIdFromAuthorized();

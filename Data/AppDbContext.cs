@@ -1,5 +1,4 @@
-﻿using Abstractions.Models;
-using Abstractions.Models.QueueEntities;
+﻿using Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Data
@@ -13,6 +12,7 @@ namespace Data
 
         public DbSet<MessageRequest> MessageRequests { get; set; }
         public DbSet<MessageTask> MessageTasks { get; set; }
+        public DbSet<Credential> Credentials { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,6 +24,14 @@ namespace Data
 
             modelBuilder.Entity<MessageTask>()
                 .HasIndex(e => e.RequestId);
+
+            modelBuilder.Entity<Credential>(entity =>
+            {
+                entity.HasIndex(e => new { e.ProjectId, e.Channel, e.IsActive });
+
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            });
         }
     }
 }

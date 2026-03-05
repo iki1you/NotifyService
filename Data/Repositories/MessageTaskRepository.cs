@@ -1,4 +1,4 @@
-﻿using Abstractions.Models.QueueEntities;
+﻿using Data.Entities;
 
 namespace Data.Repositories
 {
