@@ -1,4 +1,5 @@
 ﻿using Abstractions.Models;
+using Abstractions.Models.Enums;
 using ChildrenCharity.Mailing.Core.Infrastructure.Common;
 using Data.Entities;
 using Data.Interfaces;

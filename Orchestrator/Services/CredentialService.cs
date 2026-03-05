@@ -1,7 +1,9 @@
 ﻿using Abstractions.Models;
+using Abstractions.Models.Enums;
 using Data.Interfaces;
 using Microsoft.Extensions.Logging;
 using Orchestrator.Interfaces;
+using System.Text.Json;
 
 namespace Orchestrator.Services
 {
@@ -39,7 +41,7 @@ namespace Orchestrator.Services
             return credential;
         }
 
-        public async Task<CredentialShortInfo> CreateCredentialAsync(long projectId, string channel, long adapterType, string config)
+        public async Task<CredentialShortInfo> CreateCredentialAsync(long projectId, string channel, AdapterType adapterType, JsonDocument config)
         {
             _logger.LogInformation(
                 "Creating credential for ProjectId={ProjectId}, Channel={Channel}, AdapterType={AdapterType}",

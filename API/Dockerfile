@@ -12,6 +12,7 @@ COPY ["Data/Data.csproj", "Data/"]
 COPY ["Infrastracture/Abstractions.csproj", "Infrastracture/"]
 COPY ["Orchestrator/Orchestrator.csproj", "Orchestrator/"]
 COPY ["Queue/Queue.csproj", "Queue/"]
+COPY ["Adapters/Adapters.csproj", "Adapters/"]
 
 RUN dotnet restore "API/API.csproj"
 

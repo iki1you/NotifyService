@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Abstractions.Models.Enums;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace API.Models
 {
@@ -9,9 +11,9 @@ namespace API.Models
         public string Channel { get; set; } = string.Empty;
 
         [Required]
-        public long AdapterType { get; set; }
+        public AdapterType AdapterType { get; set; }
 
         [Required]
-        public string Config { get; set; } = string.Empty;
+        public JsonDocument Config { get; set; } = JsonDocument.Parse("{}");
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Abstractions.Models;
+using Abstractions.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace Data.Entities
 {
@@ -18,10 +20,11 @@ namespace Data.Entities
         public string Channel { get; set; } = string.Empty;
 
         [Required]
-        public long AdapterType { get; set; }
+        public AdapterType AdapterType { get; set; }
 
         [Required]
-        public string Config { get; set; } = string.Empty;
+        [Column(TypeName = "jsonb")]
+        public JsonDocument Config { get; set; } = JsonDocument.Parse("{}");
 
         public bool IsActive { get; set; } = true;
 

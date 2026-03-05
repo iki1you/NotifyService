@@ -10,6 +10,7 @@ COPY ["Workers/Workers.csproj", "Workers/"]
 COPY ["Data/Data.csproj", "Data/"]
 COPY ["Infrastracture/Abstractions.csproj", "Infrastracture/"]
 COPY ["Queue/Queue.csproj", "Queue/"]
+COPY ["Adapters/Adapters.csproj", "Adapters/"]
 
 RUN dotnet restore "Workers/Workers.csproj"
 

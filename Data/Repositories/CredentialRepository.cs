@@ -1,7 +1,9 @@
 ﻿using Abstractions.Models;
+using Abstractions.Models.Enums;
 using Data.Entities;
 using Data.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Data.Repositories
 {
@@ -28,7 +30,7 @@ namespace Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<CredentialShortInfo> AddCredentialAsync(long projectId, string channel, long adapterType, string config)
+        public async Task<CredentialShortInfo> AddCredentialAsync(long projectId, string channel, AdapterType adapterType, JsonDocument config)
         {
             var credential = new Credential
             {
@@ -48,6 +50,14 @@ namespace Data.Repositories
                 CredentialId = credential.Id,
                 AdapterType = credential.AdapterType
             };
+        }
+
+        public async Task<List<long>> GetActiveCredentialIdsByAdapterTypeAsync(AdapterType adapterType, CancellationToken ct = default)
+        {
+            return await _dbSet
+                .Where(c => c.AdapterType == adapterType && c.IsActive)
+                .Select(c => c.Id)
+                .ToListAsync(ct);
         }
     }
 }

@@ -1,8 +1,10 @@
-﻿namespace Abstractions.Models
+﻿using Abstractions.Models.Enums;
+
+namespace Abstractions.Models
 {
     public class CredentialShortInfo
     {
         public long CredentialId { get; set; }
-        public long AdapterType { get; set; }
+        public AdapterType AdapterType { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,6 +13,25 @@ namespace Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "Credentials",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProjectId = table.Column<long>(type: "bigint", nullable: false),
+                    Channel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    AdapterType = table.Column<int>(type: "integer", nullable: false),
+                    Config = table.Column<JsonDocument>(type: "jsonb", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Credentials", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "MessageRequests",
                 columns: table => new
@@ -52,6 +72,11 @@ namespace Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Credentials_ProjectId_Channel_IsActive",
+                table: "Credentials",
+                columns: new[] { "ProjectId", "Channel", "IsActive" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MessageRequests_RequestId",
                 table: "MessageRequests",
                 column: "RequestId",
@@ -66,6 +91,9 @@ namespace Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Credentials");
+
             migrationBuilder.DropTable(
                 name: "MessageRequests");
 

@@ -1,16 +1,37 @@
-﻿namespace Workers.Workers
+﻿using Abstractions.Models;
+using Abstractions.Models.Enums;
+using Adapters.GreenAPI.Models.Requests;
+using Adapters.Interfaces;
+
+namespace Workers.Workers
 {
-    public class GreenApiWorker(ILogger<GreenApiWorker> logger) : BackgroundService
+    public class GreenApiWorker : BaseWorker
     {
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public GreenApiWorker(
+            ILogger<GreenApiWorker> logger,
+            IServiceScopeFactory serviceScopeFactory)
+            : base(logger, serviceScopeFactory, AdapterType.GreenAPI, "GreenAPI")
         {
-            while (!stoppingToken.IsCancellationRequested)
+        }
+
+        protected override async Task ProcessMessageInternalAsync(MessageTaskDTO messageTask)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var greenApiSendService = scope.ServiceProvider.GetRequiredService<IGreenApiSendService>();
+
+            var request = new GreenApiSendMessageRequest
             {
-                if (logger.IsEnabled(LogLevel.Information))
-                {
-                    logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                }
-                await Task.Delay(1000, stoppingToken);
+                Recipient = messageTask.Recipient,
+                Title = string.Empty,
+                Content = messageTask.Content,
+                Attachments = []
+            };
+
+            var result = await greenApiSendService.Send(request, messageTask.CredentialId);
+
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"Failed to send message: {result.Error?.Message}");
             }
         }
     }
