@@ -21,16 +21,16 @@ namespace API.Controllers
         }
 
         [HttpGet(Name = "SendMessage")]
-        [ProducesDefaultResponseType(typeof(OperationResult))]
-        [ProducesResponseType<OperationResult>(StatusCodes.Status200OK)]
+        [ProducesDefaultResponseType(typeof(OperationResult<SendMessageResponse>))]
+        [ProducesResponseType<SendMessageResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<OperationResult>(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<OperationResult>> SendMessage([FromBody] SendMessageRequest request)
+        public async Task<ActionResult<OperationResult<SendMessageResponse>>> SendMessage([FromBody] SendMessageRequest request)
         {
             var projectId = await _accountService.GetProjectIdFromAuthorized();
 
             var result = await _orchestratorService.ProcessSendRequestAsync(request, projectId);
 
-            return result.IsFail? BadRequest(): Ok();
+            return result.IsFail ? BadRequest(result) : Ok(result.Result);
         }
     }
 }

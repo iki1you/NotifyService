@@ -5,6 +5,6 @@ namespace Orchestrator.Interfaces
 {
     public interface IOrchestratorService
     {
-        Task<OperationResult> ProcessSendRequestAsync(SendMessageRequest request, long projectId);
+        Task<OperationResult<SendMessageResponse>> ProcessSendRequestAsync(SendMessageRequest request, long projectId);
     }
 }

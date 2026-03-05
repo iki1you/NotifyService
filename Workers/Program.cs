@@ -1,6 +1,9 @@
-﻿using Workers.Workers;
+﻿using Data.Extensions;
+using Workers.Workers;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+builder.Services.AddDataServices(builder.Configuration);
 
 builder.Services.AddHostedService<GreenApiWorker>();
 builder.Services.AddHostedService<SMTPWorker>();

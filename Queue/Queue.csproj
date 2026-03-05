@@ -7,9 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Data\Data.csproj" />
     <ProjectReference Include="..\Infrastracture\Abstractions.csproj" />
-    <ProjectReference Include="..\Queue\Queue.csproj" />
   </ItemGroup>
 
 </Project>

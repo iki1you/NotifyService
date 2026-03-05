@@ -1,8 +1,11 @@
 <Solution>
   <Folder Name="/Core/">
     <Project Path="API/API.csproj" />
-    <Project Path="Data/Data.csproj" />
     <Project Path="Orchestrator/Orchestrator.csproj" />
+  </Folder>
+  <Folder Name="/Persistence/">
+    <Project Path="Data/Data.csproj" />
+    <Project Path="Queue/Queue.csproj" />
   </Folder>
   <Folder Name="/Workers/">
     <Project Path="Adapters/Adapters.csproj" />

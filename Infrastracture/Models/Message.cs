@@ -1,8 +1,8 @@
 ﻿namespace Abstractions.Models
 {
-    public class Message
+    public class Message : IEntity
     {
-        public string Recipient { get; set; }
+        public long Id { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
         public ICollection<MessageAttachment> Attachments { get; set; } = [];
