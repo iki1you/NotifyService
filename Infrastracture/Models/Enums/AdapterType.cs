@@ -4,6 +4,7 @@
     {
         GreenAPI = 0,
         TelegramAPI = 1,
-        SMTP = 2
+        SMTP = 2,
+        DashaMailApi = 3
     }
 }

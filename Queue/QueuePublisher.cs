@@ -1,5 +1,4 @@
-﻿using Abstractions.Models;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Queue.Interfaces;
 using Queue.Services;
 using RabbitMQ.Client;
@@ -27,7 +26,7 @@ namespace Queue
             };
         }
 
-        public async Task PublishAsync(string queueName, MessageTaskDTO messageTask)
+        public async Task PublishAsync<T>(string queueName, T message, bool throwOnError = true)
         {
             try
             {
@@ -35,7 +34,6 @@ namespace Queue
 
                 using var channel = await connection.CreateChannelAsync();
 
-                // Объявляем очередь (создается, если не существует)
                 await channel.QueueDeclareAsync(
                     queue: queueName,
                     durable: true,
@@ -43,20 +41,17 @@ namespace Queue
                     autoDelete: false,
                     arguments: null);
 
-                // Сериализуем сообщение
-                var messageJson = JsonSerializer.Serialize(messageTask, _jsonOptions);
+                var messageJson = JsonSerializer.Serialize(message, _jsonOptions);
                 var body = Encoding.UTF8.GetBytes(messageJson);
 
-                // Настройка свойств сообщения
                 var properties = new BasicProperties
                 {
-                    Persistent = true, // Сообщение сохранится на диск
+                    Persistent = true,
                     ContentType = "application/json",
                     DeliveryMode = DeliveryModes.Persistent,
                     Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
                 };
 
-                // Публикуем сообщение
                 await channel.BasicPublishAsync(
                     exchange: string.Empty,
                     routingKey: queueName,
@@ -65,15 +60,19 @@ namespace Queue
                     body: body);
 
                 _logger.LogInformation(
-                    "Message published to queue {QueueName}. MessageTask ID: {MessageTaskId}, RequestId: {RequestId}",
-                    queueName, messageTask.Id, messageTask.RequestId);
+                    "Message published to queue {QueueName}. Message type: {MessageType}",
+                    queueName, typeof(T).Name);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Failed to publish message to queue {QueueName}. MessageTask ID: {MessageTaskId}, RequestId: {RequestId}",
-                    queueName, messageTask.Id, messageTask.RequestId);
-                throw;
+                    "Failed to publish message to queue {QueueName}. Message type: {MessageType}",
+                    queueName, typeof(T).Name);
+
+                if (throwOnError)
+                {
+                    throw;
+                }
             }
         }
     }

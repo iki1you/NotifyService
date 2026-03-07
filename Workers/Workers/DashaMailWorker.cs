@@ -1,10 +1,12 @@
 ﻿using Abstractions.Models;
 using Abstractions.Models.Enums;
+using Queue.AbstractWorkers;
 
 namespace Workers.Workers
 {
-    public class DashaMailWorker : BaseWorker
+    public class DashaMailWorker : MultiConsumerWorker
     {
+        private readonly ILogger<DashaMailWorker> _logger;
         // TODO: Добавить IDashaMailSendService когда он будет реализован
         // private readonly IDashaMailSendService _dashaMailSendService;
 
@@ -12,21 +14,16 @@ namespace Workers.Workers
             ILogger<DashaMailWorker> logger,
             IServiceScopeFactory serviceScopeFactory)
             // IDashaMailSendService dashaMailSendService) // TODO: раскомментировать
-            : base(logger, serviceScopeFactory, AdapterType.SMTP, "DashaMail") // TODO: Заменить на правильный AdapterType
+            : base(logger, serviceScopeFactory, AdapterType.DashaMailApi)
         {
+            _logger = logger;
             // _dashaMailSendService = dashaMailSendService; // TODO: раскомментировать
         }
 
-        protected override async Task ProcessMessageInternalAsync(MessageTaskDTO messageTask)
+        protected override async Task ProcessMessageAsync(MessageTaskDTO messageTask)
         {
-            // TODO: Реализовать отправку через DashaMail
-            // using var scope = _serviceScopeFactory.CreateScope();
-            // var dashaMailSendService = scope.ServiceProvider.GetRequiredService<IDashaMailSendService>();
-            // var result = await dashaMailSendService.Send(...);
-            // if (!result.IsSuccess)
-            // {
-            //     throw new InvalidOperationException($"Failed to send via DashaMail: {result.Error?.Message}");
-            // }
+            _logger.LogInformation("DashaMail Worker: Processing message task {TaskId} for recipient {Recipient}",
+                messageTask.Id, messageTask.Recipient);
 
             await Task.CompletedTask;
             throw new NotImplementedException("DashaMail worker is not implemented yet");

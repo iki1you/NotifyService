@@ -1,4 +1,6 @@
-﻿namespace Abstractions.Models
+﻿using Abstractions.Models.Enums;
+
+namespace Abstractions.Models
 {
     public class MessageTaskDTO
     {
@@ -9,7 +11,7 @@
         public string Channel { get; set; } = string.Empty;
         public string Recipient { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
+        public MessageTaskStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

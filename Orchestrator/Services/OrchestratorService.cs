@@ -77,7 +77,7 @@ namespace Orchestrator.Services
                         Content = request.Message.Content,
                         Recipient = recipient.Recipient,
                         Channel = recipient.Channel,
-                        Status = "Pending",
+                        Status = MessageTaskStatus.Pending,
                         CreatedAt = DateTime.UtcNow
                     };
 

@@ -25,6 +25,11 @@ namespace Data
             modelBuilder.Entity<MessageTask>()
                 .HasIndex(e => e.RequestId);
 
+            modelBuilder.Entity<MessageTask>()
+                .Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
             modelBuilder.Entity<Credential>(entity =>
             {
                 entity.HasIndex(e => new { e.ProjectId, e.Channel, e.IsActive });

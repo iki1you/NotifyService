@@ -1,4 +1,5 @@
 ﻿using Abstractions.Models;
+using Abstractions.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -31,8 +32,7 @@ namespace Data.Entities
         public string Content { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string Status { get; set; }
+        public MessageTaskStatus Status { get; set; }
 
         [Required]
         public DateTime CreatedAt { get; set; }
