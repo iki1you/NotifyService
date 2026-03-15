@@ -1,0 +1,36 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">AdminPanel</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="message-requests">
+                <span class="bi bi-envelope-nav-menu" aria-hidden="true"></span> Message Requests
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="message-tasks">
+                <span class="bi bi-list-task-nav-menu" aria-hidden="true"></span> Message Tasks
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="credentials">
+                <span class="bi bi-key-nav-menu" aria-hidden="true"></span> Credentials
+            </NavLink>
+        </div>
+    </nav>
+</div>
+

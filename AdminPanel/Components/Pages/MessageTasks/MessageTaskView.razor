@@ -1,0 +1,130 @@
+﻿@page "/message-tasks/view/{id:long}"
+@using Data.Entities
+@using AdminPanel.Services
+@inject IDataService<MessageTask> MessageTaskService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>View Message Task</PageTitle>
+
+<PageHeader Title="Message Task Details" OnBack="Back">
+    <PageHeaderExtra>
+        <Space>
+            <SpaceItem>
+                <Button Type="@ButtonType.Primary" 
+                        Icon="@IconType.Outline.Edit" 
+                        OnClick="Edit">
+                    Edit
+                </Button>
+            </SpaceItem>
+        </Space>
+    </PageHeaderExtra>
+</PageHeader>
+
+@if (messageTask == null)
+{
+    <Spin Size="@SpinSize.Large" Tip="Loading...">
+        <div style="height: 200px;"></div>
+    </Spin>
+}
+else
+{
+    <Card>
+        <Descriptions Bordered Column="1" Size="@DescriptionsSize.Middle">
+            <DescriptionsItem Title="ID">
+                @messageTask.Id
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Request ID">
+                <Text Code Copyable>@messageTask.RequestId</Text>
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Project ID">
+                @messageTask.ProjectId
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Credential ID">
+                @messageTask.CredentialId
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Channel">
+                <Tag Color="@("blue")">@messageTask.Channel</Tag>
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Recipient">
+                <Text Copyable>@messageTask.Recipient</Text>
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Content">
+                <Paragraph>
+                    <pre style="background: #f5f5f5; padding: 12px; border-radius: 4px; margin: 0;">@messageTask.Content</pre>
+                </Paragraph>
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Status">
+                <Tag Color="@GetStatusColor(messageTask.Status)">@messageTask.Status</Tag>
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Created At">
+                @messageTask.CreatedAt.ToString("F")
+            </DescriptionsItem>
+
+            <DescriptionsItem Title="Updated At">
+                @(messageTask.UpdatedAt?.ToString("F") ?? "-")
+            </DescriptionsItem>
+        </Descriptions>
+
+        <div style="margin-top: 24px;">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" 
+                            Icon="@IconType.Outline.Edit" 
+                            OnClick="Edit">
+                        Edit
+                    </Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button Icon="@IconType.Outline.ArrowLeft" 
+                            OnClick="Back">
+                        Back to List
+                    </Button>
+                </SpaceItem>
+            </Space>
+        </div>
+    </Card>
+}
+
+@code {
+    [Parameter]
+    public long Id { get; set; }
+
+    private MessageTask? messageTask;
+
+    protected override async Task OnInitializedAsync()
+    {
+        messageTask = await MessageTaskService.GetByIdAsync(Id);
+    }
+
+    private void Edit()
+    {
+        Navigation.NavigateTo($"/message-tasks/edit/{Id}");
+    }
+
+    private void Back()
+    {
+        Navigation.NavigateTo("/message-tasks");
+    }
+
+    private string GetStatusColor(Abstractions.Models.Enums.MessageTaskStatus status)
+    {
+        return status switch
+        {
+            Abstractions.Models.Enums.MessageTaskStatus.Pending => "orange",
+            Abstractions.Models.Enums.MessageTaskStatus.Processing => "blue",
+            Abstractions.Models.Enums.MessageTaskStatus.Sent => "green",
+            Abstractions.Models.Enums.MessageTaskStatus.Failed => "red",
+            Abstractions.Models.Enums.MessageTaskStatus.Rejected => "volcano",
+            _ => "default"
+        };
+    }
+}

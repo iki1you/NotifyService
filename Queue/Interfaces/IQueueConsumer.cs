@@ -6,5 +6,6 @@ namespace Queue.Interfaces
     {
         Task StartConsuming(string queueName, Func<MessageTaskDTO, Task> messageHandler, CancellationToken cancellationToken);
         Task StopConsuming();
+        Task DeleteQueue(string queueName);
     }
 }

@@ -1,0 +1,103 @@
+﻿@using Data.Entities
+@using Abstractions.Models.Enums
+@using Microsoft.AspNetCore.Components.Forms
+@using AdminPanel.Components.Pages.MessageTasks
+@using AdminPanel.Components.DTO
+
+<Form Model="@Model" OnFinish="@HandleFinish" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+    @if (Mode == FormMode.Edit)
+    {
+        <FormItem Label="ID">
+            <AntDesign.InputNumber @bind-Value="@Model.Id" Disabled />
+        </FormItem>
+    }
+
+    <FormItem Label="Request ID">
+        @if (Mode == FormMode.Create)
+        {
+            <Input @bind-Value="@RequestIdString" Disabled="@IsReadOnly" />
+        }
+        else
+        {
+            <Input Value="@Model.RequestId.ToString()" Disabled />
+        }
+    </FormItem>
+
+    <FormItem Label="Project ID">
+        <AntDesign.InputNumber @bind-Value="@Model.ProjectId" Disabled="@IsReadOnly" />
+    </FormItem>
+
+    <FormItem Label="Credential ID">
+        <AntDesign.InputNumber @bind-Value="@Model.CredentialId" Disabled="@IsReadOnly" />
+    </FormItem>
+
+    <FormItem Label="Channel">
+        <Input @bind-Value="@Model.Channel" Disabled="@IsReadOnly" Placeholder="Enter channel name" />
+    </FormItem>
+
+    <FormItem Label="Recipient">
+        <Input @bind-Value="@Model.Recipient" Disabled="@IsReadOnly" Placeholder="Enter recipient" />
+    </FormItem>
+
+    <FormItem Label="Content">
+        <TextArea @bind-Value="@Model.Content" Rows="5" Disabled="@IsReadOnly" Placeholder="Enter message content" />
+    </FormItem>
+
+    <FormItem Label="Status">
+        <Select @bind-Value="@Model.Status" Disabled="@IsReadOnly" TItem="MessageTaskStatus" TItemValue="MessageTaskStatus">
+            <SelectOptions>
+                @foreach (MessageTaskStatus status in Enum.GetValues(typeof(MessageTaskStatus)))
+                {
+                    <SelectOption TItem="MessageTaskStatus" TItemValue="MessageTaskStatus" Value="@status" Label="@status.ToString()" />
+                }
+            </SelectOptions>
+        </Select>
+    </FormItem>
+
+    <FormItem WrapperCol="new ColLayoutParam { Offset = 6, Span = 18 }">
+        <Space>
+            @if (Mode != FormMode.View)
+            {
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">@SubmitButtonText</Button>
+                </SpaceItem>
+            }
+            <SpaceItem>
+                <Button OnClick="@OnCancel">@CancelButtonText</Button>
+            </SpaceItem>
+        </Space>
+    </FormItem>
+</Form>
+
+@code {
+    [Parameter]
+    public MessageTask Model { get; set; } = null!;
+
+    [Parameter]
+    public FormMode Mode { get; set; } = FormMode.Create;
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public string? RequestIdString { get; set; }
+
+    private bool IsReadOnly => Mode == FormMode.View;
+
+    private string SubmitButtonText => Mode switch
+    {
+        FormMode.Create => "Create",
+        FormMode.Edit => "Update",
+        _ => "Submit"
+    };
+
+    private string CancelButtonText => Mode == FormMode.View ? "Back" : "Cancel";
+
+    private async Task HandleFinish(EditContext editContext)
+    {
+        await OnValidSubmit.InvokeAsync();
+    }
+}

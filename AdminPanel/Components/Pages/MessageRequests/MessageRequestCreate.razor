@@ -1,0 +1,45 @@
+﻿@page "/message-requests/create"
+
+@using Data.Entities
+@using AdminPanel.Components.DTO
+@using AdminPanel.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using AdminPanel.Components.Pages.MessageRequests
+@inject IDataService<MessageRequest> MessageRequestService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Create Message Request</PageTitle>
+
+<h1>Create Message Request</h1>
+
+<MessageRequestForm Model="@messageRequest" 
+                    Mode="FormMode.Create" 
+                    OnValidSubmit="@HandleValidSubmit" 
+                    OnCancel="@Cancel"
+                    RequestIdString="@requestIdString" />
+
+@code {
+    private MessageRequest messageRequest = new() 
+    { 
+        Status = "Pending",
+        TotalRecipients = 0
+    };
+    private string requestIdString = Guid.NewGuid().ToString();
+
+    private async Task HandleValidSubmit()
+    {
+        if (Guid.TryParse(requestIdString, out var requestId))
+        {
+            messageRequest.RequestId = requestId;
+            messageRequest.CreatedAt = DateTime.UtcNow;
+            await MessageRequestService.CreateAsync(messageRequest);
+            Navigation.NavigateTo("/message-requests");
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/message-requests");
+    }
+}

@@ -163,7 +163,7 @@ namespace Queue.AbstractWorkers
         }
 
         /// <summary>
-        /// Останавливает консьюмера.
+        /// Останавливает консьюмера и удаляет его очередь.
         /// </summary>
         private async Task StopConsumerAsync(ConsumerInfo info)
         {
@@ -173,6 +173,11 @@ namespace Queue.AbstractWorkers
             {
                 info.CancellationTokenSource.Cancel();
                 await info.Task;
+
+                // Удаляем очередь
+                using var deleteScope = _serviceScopeFactory.CreateScope();
+                var queueConsumer = deleteScope.ServiceProvider.GetRequiredService<IQueueConsumer>();
+                await queueConsumer.DeleteQueue(info.QueueName);
             }
             catch (Exception ex)
             {

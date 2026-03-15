@@ -124,5 +124,22 @@ namespace Queue
                 _logger.LogInformation("Stopped consuming. Consumer tag: {ConsumerTag}", _consumerTag);
             }
         }
+
+        public async Task DeleteQueue(string queueName)
+        {
+            try
+            {
+                var connection = _connectionFactory.GetConnection();
+                using var channel = await connection.CreateChannelAsync();
+
+                await channel.QueueDeleteAsync(queueName, ifUnused: false, ifEmpty: false);
+                _logger.LogInformation("Queue {QueueName} deleted successfully", queueName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting queue {QueueName}", queueName);
+                throw;
+            }
+        }
     }
 }

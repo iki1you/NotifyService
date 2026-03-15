@@ -1,0 +1,83 @@
+﻿@using Data.Entities
+@using Microsoft.AspNetCore.Components.Forms
+@using AdminPanel.Components.Pages.MessageRequests
+@using AdminPanel.Components.DTO
+
+<Form Model="@Model" OnFinish="@HandleFinish" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+    @if (Mode == FormMode.Edit)
+    {
+        <FormItem Label="ID">
+            <AntDesign.InputNumber @bind-Value="@Model.Id" Disabled />
+        </FormItem>
+    }
+
+    <FormItem Label="Request ID">
+        @if (Mode == FormMode.Create)
+        {
+            <Input @bind-Value="@RequestIdString" Disabled="@IsReadOnly" />
+        }
+        else
+        {
+            <Input Value="@Model.RequestId.ToString()" Disabled />
+        }
+    </FormItem>
+
+    <FormItem Label="Project ID">
+        <AntDesign.InputNumber @bind-Value="@Model.ProjectId" Disabled="@IsReadOnly" />
+    </FormItem>
+
+    <FormItem Label="Status">
+        <Input @bind-Value="@Model.Status" Disabled="@IsReadOnly" Placeholder="Enter status" />
+    </FormItem>
+
+    <FormItem Label="Total Recipients">
+        <AntDesign.InputNumber @bind-Value="@Model.TotalRecipients" Disabled="@IsReadOnly" Min="0" />
+    </FormItem>
+
+    <FormItem WrapperCol="new ColLayoutParam { Offset = 6, Span = 18 }">
+        <Space>
+            @if (Mode != FormMode.View)
+            {
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">@SubmitButtonText</Button>
+                </SpaceItem>
+            }
+            <SpaceItem>
+                <Button OnClick="@OnCancel">@CancelButtonText</Button>
+            </SpaceItem>
+        </Space>
+    </FormItem>
+</Form>
+
+@code {
+    [Parameter]
+    public MessageRequest Model { get; set; } = null!;
+
+    [Parameter]
+    public FormMode Mode { get; set; } = FormMode.Create;
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public string? RequestIdString { get; set; }
+
+    private bool IsReadOnly => Mode == FormMode.View;
+
+    private string SubmitButtonText => Mode switch
+    {
+        FormMode.Create => "Create",
+        FormMode.Edit => "Update",
+        _ => "Submit"
+    };
+
+    private string CancelButtonText => Mode == FormMode.View ? "Back" : "Cancel";
+
+    private async Task HandleFinish(EditContext editContext)
+    {
+        await OnValidSubmit.InvokeAsync();
+    }
+}

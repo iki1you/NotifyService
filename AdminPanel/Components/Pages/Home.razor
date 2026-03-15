@@ -1,0 +1,109 @@
+﻿@page "/"
+@using Data.Entities
+@using AdminPanel.Services
+@inject IDataService<MessageRequest> MessageRequestService
+@inject IDataService<MessageTask> MessageTaskService
+@inject IDataService<Credential> CredentialService
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard</PageTitle>
+
+<h1>NotifyService Admin Panel</h1>
+<p>Welcome to the NotifyService administration panel</p>
+
+@if (isLoading)
+{
+    <p><em>Loading statistics...</em></p>
+}
+else
+{
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Message Requests</div>
+                <div class="card-body">
+                    <h5 class="card-title display-4">@totalMessageRequests</h5>
+                    <p class="card-text">Total requests in the system</p>
+                    <a href="/message-requests" class="btn btn-light">View All</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Message Tasks</div>
+                <div class="card-body">
+                    <h5 class="card-title display-4">@totalMessageTasks</h5>
+                    <p class="card-text">Total tasks in the system</p>
+                    <a href="/message-tasks" class="btn btn-light">View All</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-header">Credentials</div>
+                <div class="card-body">
+                    <h5 class="card-title display-4">@totalCredentials</h5>
+                    <p class="card-text">Active: @activeCredentials</p>
+                    <a href="/credentials" class="btn btn-light">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Links</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="/message-requests/create" class="list-group-item list-group-item-action">
+                            <span class="bi bi-plus-circle"></span> Create New Message Request
+                        </a>
+                        <a href="/message-tasks/create" class="list-group-item list-group-item-action">
+                            <span class="bi bi-plus-circle"></span> Create New Message Task
+                        </a>
+                        <a href="/credentials/create" class="list-group-item list-group-item-action">
+                            <span class="bi bi-plus-circle"></span> Create New Credential
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private int totalMessageRequests;
+    private int totalMessageTasks;
+    private int totalCredentials;
+    private int activeCredentials;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var requests = await MessageRequestService.GetAllAsync();
+            totalMessageRequests = requests.Count;
+
+            var tasks = await MessageTaskService.GetAllAsync();
+            totalMessageTasks = tasks.Count;
+
+            var credentials = await CredentialService.GetAllAsync();
+            totalCredentials = credentials.Count;
+            activeCredentials = credentials.Count(c => c.IsActive);
+        }
+        catch
+        {
+            // Handle errors gracefully
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

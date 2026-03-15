@@ -1,0 +1,48 @@
+﻿@page "/message-tasks/create"
+
+@using Data.Entities
+@using AdminPanel.Components.DTO
+@using AdminPanel.Services
+@using Abstractions.Models.Enums
+@using Microsoft.AspNetCore.Components.Forms
+@using AdminPanel.Components.Pages.MessageTasks
+@inject IDataService<MessageTask> MessageTaskService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Create Message Task</PageTitle>
+
+<h1>Create Message Task</h1>
+
+<MessageTaskForm Model="@messageTask" 
+                 Mode="FormMode.Create" 
+                 OnValidSubmit="@HandleValidSubmit" 
+                 OnCancel="@Cancel"
+                 RequestIdString="@requestIdString" />
+
+@code {
+    private MessageTask messageTask = new() 
+    { 
+        Status = MessageTaskStatus.Pending,
+        Channel = "Email",
+        Content = "",
+        Recipient = ""
+    };
+    private string requestIdString = Guid.NewGuid().ToString();
+
+    private async Task HandleValidSubmit()
+    {
+        if (Guid.TryParse(requestIdString, out var requestId))
+        {
+            messageTask.RequestId = requestId;
+            messageTask.CreatedAt = DateTime.UtcNow;
+            await MessageTaskService.CreateAsync(messageTask);
+            Navigation.NavigateTo("/message-tasks");
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/message-tasks");
+    }
+}

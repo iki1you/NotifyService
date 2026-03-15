@@ -94,6 +94,25 @@
       - notifyservice_network
     restart: on-failure
 
+  # Admin Panel
+  adminpanel:
+    build:
+      context: .
+      dockerfile: AdminPanel/Dockerfile
+    container_name: notifyservice_adminpanel
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=NotifyService_Dev;Username=postgres;Password=postgres"
+    ports:
+      - "5001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - notifyservice_network
+    restart: on-failure
+
 volumes:
   postgres_data:
     driver: local

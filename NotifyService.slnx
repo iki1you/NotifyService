@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Core/">
+    <Project Path="AdminPanel/AdminPanel.csproj" Id="be6537e1-c63d-471b-b567-9c785c40e4b8" />
     <Project Path="API/API.csproj" />
     <Project Path="Orchestrator/Orchestrator.csproj" />
   </Folder>
