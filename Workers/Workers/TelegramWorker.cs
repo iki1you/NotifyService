@@ -3,34 +3,34 @@ using Abstractions.Models.Enums;
 using Adapters.GreenAPI.Models.Requests;
 using Adapters.Interfaces;
 using Data.Interfaces;
-using Queue.Constants;
 using Queue.AbstractWorkers;
+using Queue.Constants;
 using Queue.Interfaces;
 using Queue.Services;
 
 namespace Workers.Workers
 {
-    public class GreenApiWorker : SingleConsumerWorker<MessageTaskDTO>
+    public class TelegramWorker : SingleConsumerWorker<MessageTaskDTO>
     {
-        private readonly ILogger<GreenApiWorker> _logger;
+        private readonly ILogger<TelegramWorker> _logger;
 
-        public GreenApiWorker(
-            ILogger<GreenApiWorker> logger,
+        public TelegramWorker(
+            ILogger<TelegramWorker> logger,
             IServiceScopeFactory serviceScopeFactory,
             IRabbitMqConnectionFactory connectionFactory)
             : base(
                 logger,
                 serviceScopeFactory,
                 connectionFactory,
-                QueueNames.GetChannelQueueName(ChannelType.WhatsApp),
-                "GreenAPI Worker")
+                QueueNames.GetChannelQueueName(ChannelType.Telegram),
+                "Telegram Worker")
         {
             _logger = logger;
         }
 
         protected override async Task ProcessMessageAsync(MessageTaskDTO messageTask)
         {
-            _logger.LogInformation("WhatsApp Worker: Processing message task {TaskId} for recipient {Recipient}",
+            _logger.LogInformation("Telegram Worker: Processing message task {TaskId} for recipient {Recipient}",
                 messageTask.Id, messageTask.Recipient);
 
             using var scope = _serviceScopeFactory.CreateScope();
@@ -49,7 +49,7 @@ namespace Workers.Workers
                     StatusChangedAt = DateTime.UtcNow
                 });
 
-                _logger.LogWarning("WhatsApp Worker: Credential with id {CredentialId} not found for task {TaskId}",
+                _logger.LogWarning("Telegram Worker: Credential with id {CredentialId} not found for task {TaskId}",
                     messageTask.CredentialId, messageTask.Id);
                 return;
             }
@@ -61,12 +61,12 @@ namespace Workers.Workers
                     MessageTaskId = messageTask.Id,
                     RequestId = Guid.NewGuid(),
                     Status = MessageTaskStatus.Failed,
-                    ErrorMessage = $"Adapter {credential.AdapterType} is not supported for channel {ChannelType.WhatsApp}",
+                    ErrorMessage = $"Adapter {credential.AdapterType} is not supported for channel {ChannelType.Telegram}",
                     StatusChangedAt = DateTime.UtcNow
                 });
 
                 _logger.LogWarning(
-                    "WhatsApp Worker: Unsupported adapter {AdapterType} for task {TaskId}",
+                    "Telegram Worker: Unsupported adapter {AdapterType} for task {TaskId}",
                     credential.AdapterType,
                     messageTask.Id);
                 return;
@@ -95,7 +95,7 @@ namespace Workers.Workers
                     StatusChangedAt = DateTime.UtcNow
                 });
 
-                _logger.LogError("WhatsApp Worker: Failed to send message for task {TaskId}. Error: {Error}",
+                _logger.LogError("Telegram Worker: Failed to send message for task {TaskId}. Error: {Error}",
                     messageTask.Id, result.Error?.Message);
                 return;
             }
@@ -108,7 +108,7 @@ namespace Workers.Workers
                 StatusChangedAt = DateTime.UtcNow
             });
 
-            _logger.LogInformation("WhatsApp Worker: Message task {TaskId} sent successfully", messageTask.Id);
+            _logger.LogInformation("Telegram Worker: Message task {TaskId} sent successfully", messageTask.Id);
         }
 
         private async Task PublishStatusAsync(MessageTaskStatusDTO statusUpdate)

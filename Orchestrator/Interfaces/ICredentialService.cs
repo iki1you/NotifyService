@@ -6,7 +6,7 @@ namespace Orchestrator.Interfaces
 {
     public interface ICredentialService
     {
-        Task<CredentialShortInfo> SelectCredentialAsync(long projectId, string channel);
-        Task<CredentialShortInfo> CreateCredentialAsync(long projectId, string channel, AdapterType adapterType, JsonDocument config);
+        Task<CredentialShortInfo> SelectCredentialAsync(long projectId, ChannelType channel);
+        Task<CredentialShortInfo> CreateCredentialAsync(long projectId, ChannelType channel, AdapterType adapterType, JsonDocument config);
     }
 }

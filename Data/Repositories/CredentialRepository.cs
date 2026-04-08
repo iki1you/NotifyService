@@ -18,10 +18,12 @@ namespace Data.Repositories
             return query;
         }
 
-        public async Task<List<CredentialShortInfo>?> GetCredentialsByProjectAndChannelAsync(long projectId, string channel)
+        public async Task<List<CredentialShortInfo>?> GetCredentialsByProjectAndChannelAsync(long projectId, ChannelType channel)
         {
             return await _dbSet
-                .Where(c => c.ProjectId == projectId && c.Channel == channel && c.IsActive)
+                .Where(c => c.ProjectId == projectId
+                    && c.IsActive
+                    && c.Channel == channel)
                 .Select(c => new CredentialShortInfo
                 {
                     CredentialId = c.Id,
@@ -30,7 +32,7 @@ namespace Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<CredentialShortInfo> AddCredentialAsync(long projectId, string channel, AdapterType adapterType, JsonDocument config)
+        public async Task<CredentialShortInfo> AddCredentialAsync(long projectId, ChannelType channel, AdapterType adapterType, JsonDocument config)
         {
             var credential = new Credential
             {

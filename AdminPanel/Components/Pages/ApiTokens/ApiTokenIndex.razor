@@ -1,0 +1,144 @@
+﻿@page "/api-tokens"
+
+@using AdminPanel.Services
+@using Data.Entities
+@inject ApiTokenService ApiTokenService
+@inject MessageService MessageService
+@rendermode InteractiveServer
+
+<PageTitle>API Tokens</PageTitle>
+
+<PageHeader Title="API Tokens" />
+
+<Card Title="Issue new token" Style="margin-bottom: 16px;">
+    <Row Gutter="16">
+        <Col Span="6">
+            <label>Project ID</label>
+            <InputNumber @bind-Value="issueProjectId" Min="1" Style="width: 100%;" />
+        </Col>
+        <Col Span="10">
+            <label>Description</label>
+            <Input @bind-Value="issueDescription" Placeholder="Optional" />
+        </Col>
+        <Col Span="8" Style="display: flex; align-items: end;">
+            <Button Type="@ButtonType.Primary" Loading="@loading" OnClick="IssueToken">
+                Issue Token
+            </Button>
+        </Col>
+    </Row>
+
+    @if (!string.IsNullOrWhiteSpace(issuedJwt))
+    {
+        <Alert Type="@AlertType.Success" Message="Token generated. Copy it now (it will not be shown again)." ShowIcon="true" Style="margin-top: 16px;" />
+        <TextArea Value="@issuedJwt" AutoSize="true" ReadOnly="true" Style="margin-top: 8px;" />
+    }
+</Card>
+
+<Card Title="Issued tokens">
+    @if (tokens == null)
+    {
+        <Spin Size="@SpinSize.Large" Tip="Loading...">
+            <div style="height: 120px;"></div>
+        </Spin>
+    }
+    else if (!tokens.Any())
+    {
+        <Alert Type="@AlertType.Info" Message="No tokens issued yet." ShowIcon="true" />
+    }
+    else
+    {
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Project</th>
+                    <th>Description</th>
+                    <th>Expires</th>
+                    <th>Created</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var token in tokens)
+                {
+                    <tr>
+                        <td>@token.Id</td>
+                        <td>@token.ProjectId</td>
+                        <td>@(string.IsNullOrWhiteSpace(token.Description) ? "-" : token.Description)</td>
+                        <td>@(token.ExpiresAt.Year >= 9999 ? "Never" : token.ExpiresAt.ToString("g"))</td>
+                        <td>@token.CreatedAt.ToString("g")</td>
+                        <td>
+                            @if (token.IsRevoked)
+                            {
+                                <Tag Color="@("red")">Revoked</Tag>
+                            }
+                            else if (token.ExpiresAt <= DateTime.UtcNow)
+                            {
+                                <Tag Color="@("default")">Expired</Tag>
+                            }
+                            else
+                            {
+                                <Tag Color="@("green")">Active</Tag>
+                            }
+                        </td>
+                        <td>
+                            <Button Danger Disabled="@token.IsRevoked" OnClick="() => Revoke(token.Id)">Revoke</Button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</Card>
+
+@code {
+    private List<ApiToken>? tokens;
+    private bool loading;
+
+    private long issueProjectId = 1;
+    private string? issueDescription;
+    private string? issuedJwt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        loading = true;
+        tokens = await ApiTokenService.GetAllAsync();
+        loading = false;
+    }
+
+    private async Task IssueToken()
+    {
+        if (issueProjectId <= 0)
+        {
+            MessageService.Error("Project ID must be greater than zero.");
+            return;
+        }
+
+        loading = true;
+        try
+        {
+            var result = await ApiTokenService.IssueTokenAsync(issueProjectId, issueDescription);
+            issuedJwt = result.Jwt;
+            issueDescription = null;
+            await LoadData();
+            MessageService.Success("Token issued.");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task Revoke(long tokenId)
+    {
+        await ApiTokenService.RevokeTokenAsync(tokenId);
+        await LoadData();
+        MessageService.Success("Token revoked.");
+    }
+}

@@ -1,9 +1,11 @@
 ﻿using Abstractions.Models;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.Entities
 {
+    [Index(nameof(RequestId), IsUnique = true)]
     [Table("MessageRequests")]
     public class MessageRequest : IEntity
     {

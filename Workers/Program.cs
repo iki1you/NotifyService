@@ -10,9 +10,9 @@ builder.Services.AddAdapterServices();
 builder.Services.AddRabbitMqServices(builder.Configuration);
 
 builder.Services.AddHostedService<GreenApiWorker>();
-// TODO: Раскомментировать когда будут реализованы сервисы отправки
-// builder.Services.AddHostedService<SMTPWorker>();
-// builder.Services.AddHostedService<DashaMailWorker>();
+builder.Services.AddHostedService<MAXWorker>();
+builder.Services.AddHostedService<TelegramWorker>();
+builder.Services.AddHostedService<EmailWorker>();
 
 var host = builder.Build();
 host.Run();

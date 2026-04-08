@@ -7,8 +7,7 @@ namespace API.Models
     public class CreateCredentialRequest
     {
         [Required]
-        [MaxLength(50)]
-        public string Channel { get; set; } = string.Empty;
+        public ChannelType Channel { get; set; }
 
         [Required]
         public AdapterType AdapterType { get; set; }

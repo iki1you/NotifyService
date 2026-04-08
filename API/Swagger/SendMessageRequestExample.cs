@@ -1,4 +1,5 @@
 ﻿using Abstractions.Models;
+using Abstractions.Models.Enums;
 using Orchestrator.Models;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -15,18 +16,13 @@ namespace API.Swagger
                 {
                     new RecipientItem
                     {
-                        Channel = "Email",
+                        Channel = ChannelType.Email,
                         Recipient = "user@example.com"
                     },
                     new RecipientItem
                     {
-                        Channel = "WhatsApp",
+                        Channel = ChannelType.WhatsApp,
                         Recipient = "+79991234567"
-                    },
-                    new RecipientItem
-                    {
-                        Channel = "Telegram",
-                        Recipient = "@username"
                     }
                 },
                 Message = new Message

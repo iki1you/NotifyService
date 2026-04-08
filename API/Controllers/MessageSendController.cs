@@ -1,4 +1,5 @@
 ﻿using ChildrenCharity.Mailing.Core.Infrastructure.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Orchestrator.Interfaces;
 using Orchestrator.Models;
@@ -6,6 +7,7 @@ using Orchestrator.Models;
 namespace API.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class MessageSendController : ControllerBase
     {

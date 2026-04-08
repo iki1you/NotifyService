@@ -1,12 +1,15 @@
 ﻿using API.Models;
+using Abstractions.Models.Enums;
 using ChildrenCharity.Mailing.Core.Infrastructure.Common;
 using Data.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Orchestrator.Interfaces;
 
 namespace API.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class CredentialsController : ControllerBase
     {
@@ -57,7 +60,7 @@ namespace API.Controllers
                 {
                     Id = credential.Id,
                     ProjectId = credential.ProjectId,
-                    Channel = credential.Channel,
+                    Channel = credential.Channel.ToString(),
                     AdapterType = credential.AdapterType,
                     Config = credential.Config,
                     IsActive = credential.IsActive,
@@ -97,7 +100,7 @@ namespace API.Controllers
                 {
                     Id = c.Id,
                     ProjectId = c.ProjectId,
-                    Channel = c.Channel,
+                    Channel = c.Channel.ToString(),
                     AdapterType = c.AdapterType,
                     Config = c.Config,
                     IsActive = c.IsActive,
@@ -122,7 +125,7 @@ namespace API.Controllers
         /// <response code="200">Список credentials получен успешно</response>
         [HttpGet("channel/{channel}")]
         [ProducesResponseType(typeof(IEnumerable<CredentialResponse>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<CredentialResponse>>> GetCredentialsByChannel(string channel)
+        public async Task<ActionResult<IEnumerable<CredentialResponse>>> GetCredentialsByChannel(ChannelType channel)
         {
             try
             {
@@ -143,7 +146,7 @@ namespace API.Controllers
                 {
                     Id = c.Id,
                     ProjectId = c.ProjectId,
-                    Channel = c.Channel,
+                    Channel = c.Channel.ToString(),
                     AdapterType = c.AdapterType,
                     Config = c.Config,
                     IsActive = c.IsActive,
@@ -187,7 +190,7 @@ namespace API.Controllers
                 {
                     Id = credential.Id,
                     ProjectId = credential.ProjectId,
-                    Channel = credential.Channel,
+                    Channel = credential.Channel.ToString(),
                     AdapterType = credential.AdapterType,
                     Config = credential.Config,
                     IsActive = credential.IsActive,

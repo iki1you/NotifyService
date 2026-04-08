@@ -1,11 +1,13 @@
 ﻿using Abstractions.Models;
 using Abstractions.Models.Enums;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 
 namespace Data.Entities
 {
+    [Index(nameof(ProjectId), nameof(Channel), nameof(IsActive))]
     [Table("Credentials")]
     public class Credential : IEntity
     {
@@ -16,8 +18,7 @@ namespace Data.Entities
         public long ProjectId { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string Channel { get; set; } = string.Empty;
+        public ChannelType Channel { get; set; }
 
         [Required]
         public AdapterType AdapterType { get; set; }

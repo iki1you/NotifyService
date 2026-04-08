@@ -1,10 +1,12 @@
 ﻿using Abstractions.Models;
 using Abstractions.Models.Enums;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.Entities
 {
+    [Index(nameof(RequestId))]
     [Table("MessageTasks")]
     public class MessageTask : IEntity
     {
@@ -21,8 +23,7 @@ namespace Data.Entities
         public long CredentialId { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string Channel { get; set; }
+        public ChannelType Channel { get; set; }
 
         [Required]
         [MaxLength(500)]

@@ -1,0 +1,43 @@
+﻿@page "/login"
+@attribute [AllowAnonymous]
+
+<PageTitle>Admin Login</PageTitle>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Admin Login</h5>
+            </div>
+            <div class="card-body">
+                @if (Error == "1")
+                {
+                    <div class="alert alert-danger" role="alert">
+                        Invalid token
+                    </div>
+                }
+
+                <form method="post" action="/auth/login">
+                    <input type="hidden" name="returnUrl" value="@SafeReturnUrl" />
+
+                    <div class="mb-3">
+                        <label for="token" class="form-label">Access token</label>
+                        <input id="token" name="token" type="password" class="form-control" autocomplete="off" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Sign in</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
+
+    private string SafeReturnUrl => string.IsNullOrWhiteSpace(ReturnUrl) || !ReturnUrl.StartsWith('/') ? "/" : ReturnUrl;
+}

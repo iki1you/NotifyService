@@ -5,6 +5,7 @@ using Data.Entities;
 using Data.Interfaces;
 using Orchestrator.Interfaces;
 using Orchestrator.Models;
+using Queue.Constants;
 using Queue.Interfaces;
 
 namespace Orchestrator.Services
@@ -62,7 +63,7 @@ namespace Orchestrator.Services
                     {
                         channelErrors.Add(new ChannelError
                         {
-                            Channel = recipient.Channel,
+                            Channel = recipient.Channel.ToString(),
                             Recipient = recipient.Recipient,
                             ErrorMessage = "No credentials found for the specified channel"
                         });
@@ -91,19 +92,19 @@ namespace Orchestrator.Services
                         CredentialId = taskEntity.CredentialId,
                         Content = taskEntity.Content,
                         Recipient = taskEntity.Recipient,
-                        Channel = taskEntity.Channel,
+                        Channel = taskEntity.Channel.ToString(),
                         Status = taskEntity.Status,
                         CreatedAt = taskEntity.CreatedAt
                     };
 
-                    var queueName = $"{credential.AdapterType}.{credential.CredentialId}";
+                    var queueName = QueueNames.GetChannelQueueName(recipient.Channel);
                     await _publisher.PublishAsync(queueName, taskDto);
                 }
                 catch (Exception ex)
                 {
                     channelErrors.Add(new ChannelError
                     {
-                        Channel = recipient.Channel,
+                        Channel = recipient.Channel.ToString(),
                         Recipient = recipient.Recipient,
                         ErrorMessage = ex.Message
                     });

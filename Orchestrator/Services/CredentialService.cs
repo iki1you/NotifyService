@@ -20,7 +20,7 @@ namespace Orchestrator.Services
             _logger = logger;
         }
 
-        public async Task<CredentialShortInfo> SelectCredentialAsync(long projectId, string channel)
+        public async Task<CredentialShortInfo> SelectCredentialAsync(long projectId, ChannelType channel)
         {
             var credentials = await _credentialRepo.GetCredentialsByProjectAndChannelAsync(projectId, channel);
 
@@ -41,7 +41,7 @@ namespace Orchestrator.Services
             return credential;
         }
 
-        public async Task<CredentialShortInfo> CreateCredentialAsync(long projectId, string channel, AdapterType adapterType, JsonDocument config)
+        public async Task<CredentialShortInfo> CreateCredentialAsync(long projectId, ChannelType channel, AdapterType adapterType, JsonDocument config)
         {
             _logger.LogInformation(
                 "Creating credential for ProjectId={ProjectId}, Channel={Channel}, AdapterType={AdapterType}",
