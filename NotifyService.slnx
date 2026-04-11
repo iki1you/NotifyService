@@ -1,17 +1,24 @@
 <Solution>
   <Folder Name="/Core/">
-    <Project Path="AdminPanel/AdminPanel.csproj" Id="be6537e1-c63d-471b-b567-9c785c40e4b8" />
-    <Project Path="API/API.csproj" />
-    <Project Path="Orchestrator/Orchestrator.csproj" />
+    <Project Path="src/AdminPanel/AdminPanel.csproj" Id="be6537e1-c63d-471b-b567-9c785c40e4b8" />
+    <Project Path="src/API/API.csproj" />
+    <Project Path="src/Orchestrator/Orchestrator.csproj" />
   </Folder>
   <Folder Name="/Persistence/">
-    <Project Path="Data/Data.csproj" />
-    <Project Path="Queue/Queue.csproj" />
+    <Project Path="src/Data/Data.csproj" />
+    <Project Path="src/Queue/Queue.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="src/Infrastracture/Abstractions.csproj" />
+    <Project Path="src/Logging/Logging.csproj" Id="b4e59d7d-0430-4581-84d3-88651eb56490" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NBomber/NBomberRunner.csproj" />
+    <Project Path="tests/WireMock/WireMockRunner.csproj" />
   </Folder>
   <Folder Name="/Workers/">
-    <Project Path="Adapters/Adapters.csproj" />
-    <Project Path="Workers/Workers.csproj" />
-    <Project Path="Сhannels/Сhannels.csproj" />
+    <Project Path="src/Adapters/Adapters.csproj" />
+    <Project Path="src/Workers/Workers.csproj" />
   </Folder>
-  <Project Path="Infrastracture/Abstractions.csproj" />
 </Solution>
+

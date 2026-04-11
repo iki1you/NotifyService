@@ -1,0 +1,106 @@
+services:
+  # API Service
+  api:
+    build:
+      context: ./src
+      dockerfile: API/Dockerfile
+    container_name: notifyservice_api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${APP_ENV:-Development}
+      ASPNETCORE_URLS: http://+:8080
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-NotifyService_Development_Signing_Key_At_Least_32_Chars}
+      OpenTelemetry__Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4317}
+      TZ: UTC
+    ports:
+      - "5000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      alloy:
+        condition: service_started
+    networks:
+      - notifyservice_network
+    restart: on-failure
+
+  # Workers Service
+  workers:
+    build:
+      context: ./src
+      dockerfile: Workers/Dockerfile
+    container_name: notifyservice_workers
+    environment:
+      DOTNET_ENVIRONMENT: ${APP_ENV:-Development}
+      GREENAPI_MOCK_URL: ${GREENAPI_MOCK_URL:-}
+      OpenTelemetry__Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4317}
+      TZ: UTC
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      alloy:
+        condition: service_started
+    networks:
+      - notifyservice_network
+    restart: on-failure
+
+  wiremock:
+    build:
+      context: ./tests/WireMock
+      dockerfile: Dockerfile
+    container_name: notifyservice_wiremock
+    profiles:
+      - development
+    environment:
+      WIREMOCK_PORT: 8080
+      TZ: UTC
+    ports:
+      - "8089:8080"
+    networks:
+      - notifyservice_network
+    restart: on-failure
+
+  # Admin Panel
+  adminpanel:
+    build:
+      context: ./src
+      dockerfile: AdminPanel/Dockerfile
+    container_name: notifyservice_adminpanel
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${APP_ENV:-Development}
+      ASPNETCORE_URLS: http://+:8080
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-NotifyService_Development_Signing_Key_At_Least_32_Chars}
+      TZ: UTC
+    ports:
+      - "5001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - notifyservice_network
+    restart: on-failure
+
+  # NBomber Load Testing
+  nbomber:
+    build:
+      context: ./tests/NBomber
+      dockerfile: Dockerfile
+    container_name: notifyservice_nbomber
+    profiles:
+      - loadtest
+    environment:
+      API_URL: ${TARGET_URL:-http://notifyservice_api:8080}
+      API_BEARER_TOKEN: ${API_BEARER_TOKEN:-}
+      TEST_TYPE: ${TEST_TYPE:-load}
+      TEST_RUN: ${TEST_RUN:-notifyservice-local}
+      TEST_RUN_ID: ${TEST_RUN_ID:-notifyservice-local}
+      SLOW_MS: ${SLOW_MS:-500}
+      THINK_TIME_MIN: ${THINK_TIME_MIN:-0.3}
+      THINK_TIME_MAX: ${THINK_TIME_MAX:-1.2}
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - notifyservice_network

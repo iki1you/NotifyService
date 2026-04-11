@@ -1,0 +1,99 @@
+﻿otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    traces = [otelcol.processor.batch.traces.input]
+    metrics = [otelcol.processor.batch.metrics.input]
+  }
+}
+
+otelcol.processor.batch "traces" {
+  output {
+    traces = [otelcol.exporter.otlphttp.tempo.input]
+  }
+}
+
+otelcol.processor.batch "metrics" {
+  output {
+    metrics = [otelcol.exporter.prometheus.metrics.input]
+  }
+}
+
+otelcol.exporter.prometheus "metrics" {
+  forward_to = [prometheus.remote_write.otlp.receiver]
+}
+
+prometheus.remote_write "otlp" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+otelcol.exporter.otlphttp "tempo" {
+  client {
+    endpoint = "http://tempo:4318"
+  }
+}
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "notifyservice" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/notifyservice[-_](postgres|rabbitmq|loki|grafana|prometheus|postgres_exporter|node_exporter|api|workers|adminpanel|tempo|alloy|nbomber|wiremock)([-_].*)?"
+    action        = "keep"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/notifyservice[-_](postgres|rabbitmq|loki|grafana|prometheus|postgres_exporter|node_exporter|api|workers|adminpanel|tempo|alloy|nbomber|wiremock)([-_].*)?"
+    target_label  = "service"
+    replacement   = "$1"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/notifyservice[-_](postgres|rabbitmq|loki|grafana|prometheus|postgres_exporter|node_exporter|api|workers|adminpanel|tempo|alloy|nbomber|wiremock)([-_].*)?"
+    target_label = "app"
+    replacement  = "notifyservice-$1"
+  }
+
+  rule {
+    target_label = "env"
+    replacement  = "development"
+  }
+}
+
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.notifyservice.output
+  forward_to = [loki.relabel.notifyservice.receiver]
+}
+
+loki.relabel "notifyservice" {
+  rule {
+    source_labels = ["service"]
+    regex         = "(.*)"
+    target_label  = "app"
+    replacement   = "notifyservice-$1"
+  }
+
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+

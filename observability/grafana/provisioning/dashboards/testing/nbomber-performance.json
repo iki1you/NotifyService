@@ -1,0 +1,198 @@
+{
+  "id": null,
+  "uid": "nbomber-performance-dashboard",
+  "title": "NBomber Performance Analysis",
+  "tags": ["nbomber", "performance", "loki"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "type": "custom",
+        "label": "Environment",
+        "query": "development,staging,production",
+        "current": {
+          "selected": true,
+          "text": "development",
+          "value": "development"
+        },
+        "includeAll": false,
+        "multi": false
+      },
+      {
+        "name": "test_run_id",
+        "type": "textbox",
+        "label": "Test Run ID",
+        "query": "",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "test_type",
+        "type": "textbox",
+        "label": "Test Type",
+        "query": "",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "trace_id",
+        "type": "textbox",
+        "label": "Trace ID contains",
+        "query": "",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "NBomber slow traces (5m)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({app=\"notifyservice-nbomber\", service=\"nbomber\", env=~\"$env\"} |= \"[nbomber-slow-trace]\" |= \"test_run_id=$test_run_id\" |= \"test_type=$test_type\" [5m]))",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "NBomber slow traces by endpoint",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (endpoint) (count_over_time({app=\"notifyservice-nbomber\", service=\"nbomber\", env=~\"$env\"} |= \"[nbomber-slow-trace]\" |= \"test_run_id=$test_run_id\" |= \"test_type=$test_type\" | regexp \".*endpoint=(?P<endpoint>[^ ]+).*\" [1m]))",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "NBomber p95 slow duration, ms",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "quantile_over_time(0.95, {app=\"notifyservice-nbomber\", service=\"nbomber\", env=~\"$env\"} |= \"[nbomber-slow-trace]\" |= \"test_run_id=$test_run_id\" |= \"test_type=$test_type\" | regexp \".*duration_ms=(?P<duration_ms>[0-9]+).*\" | unwrap duration_ms [5m])",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "NBomber traces",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{app=\"notifyservice-nbomber\", service=\"nbomber\", env=~\"$env\"} |= \"test_run_id=$test_run_id\" |= \"test_type=$test_type\" |= \"$trace_id\"",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    }
+  ]
+}

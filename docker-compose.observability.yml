@@ -1,0 +1,150 @@
+services:
+  # Tempo
+  tempo:
+    image: grafana/tempo:2.10.3
+    container_name: notifyservice_tempo
+    command: ["-config.file=/etc/tempo/config.yml"]
+    ports:
+      - "3200:3200" # Tempo query frontend
+    volumes:
+      - ./observability/tempo/config.yml:/etc/tempo/config.yml:ro
+      - tempo_data:/var/tempo
+    healthcheck:
+      test: ["CMD", "/tempo", "-version"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - notifyservice_network
+
+  # Loki
+  loki:
+    image: grafana/loki:3.6.10
+    container_name: notifyservice_loki
+    command: ["-config.file=/etc/loki/config.yml"]
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./observability/loki/config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    healthcheck:
+      test: ["CMD", "loki", "-version"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - notifyservice_network
+
+  # Grafana Alloy (OTLP + logs pipeline)
+  alloy:
+    image: grafana/alloy:v1.15.0
+    container_name: notifyservice_alloy
+    command: ["run", "/etc/alloy/config.alloy"]
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+    volumes:
+      - ./observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    networks:
+      - notifyservice_network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:12.4.2
+    container_name: notifyservice_grafana
+    environment:
+      TZ: UTC
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_FEATURE_TOGGLES_ENABLE: tempoSearch traceqlEditor tempoServiceGraph
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - notifyservice_network
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v3.11.1
+    container_name: notifyservice_prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.enable-remote-write-receiver
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres-exporter:
+        condition: service_started
+      node-exporter:
+        condition: service_started
+    networks:
+      - notifyservice_network
+
+  # Node Exporter
+  node-exporter:
+    image: prom/node-exporter:v1.11.1
+    container_name: notifyservice_node_exporter
+    command:
+      - --path.procfs=/host/proc
+      - --path.rootfs=/rootfs
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)
+      - '--collector.filesystem.fs-types-exclude=^(tmpfs|fuse.lxcfs|fuse.gvfs-fuse-daemon|fuse.portal|tracefs|drvfs)$'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    networks:
+      - notifyservice_network
+
+  # PostgreSQL Exporter
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.19.1
+    container_name: notifyservice_postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: postgresql://postgres:postgres@postgres:5432/${POSTGRES_DB:-NotifyService_Dev}?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - notifyservice_network
+
+volumes:
+  loki_data:
+    driver: local
+  grafana_data:
+    driver: local
+  tempo_data:
+    driver: local
+  prometheus_data:
+    driver: local
