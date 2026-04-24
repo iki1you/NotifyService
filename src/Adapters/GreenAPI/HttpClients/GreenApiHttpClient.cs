@@ -24,19 +24,45 @@ public class GreenApiHttpClient(ILogger<GreenApiSendService> logger)
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                var error = Error.BadRequest(
-                    $"Error during API request: unexpected status code {(int)response.StatusCode} ({response.StatusCode}). Response: {responseBody}");
+                var errorMessage =
+                    $"Error during API request: unexpected status code {(int)response.StatusCode} ({response.StatusCode}). Response: {responseBody}";
+
+                if (IsTransientStatusCode(response.StatusCode))
+                {
+                    logger.LogWarning(errorMessage);
+                    throw new TransientProviderException(errorMessage);
+                }
+
+                var error = response.StatusCode switch
+                {
+                    HttpStatusCode.BadRequest => Error.BadRequest(errorMessage),
+                    HttpStatusCode.Unauthorized => Error.Unauthorized(errorMessage),
+                    HttpStatusCode.Forbidden => Error.Forbidden(errorMessage),
+                    HttpStatusCode.TooManyRequests => Error.TooManyRequests(errorMessage),
+                    _ => Error.BadRequest(errorMessage)
+                };
+
                 logger.LogError(error.Message);
                 return error;
             }
 
             return responseBody;
         }
+        catch (TaskCanceledException ex)
+        {
+            var errorMessage = $"Error during API request: timeout. {ex.Message}";
+            logger.LogWarning(errorMessage);
+            throw new TransientProviderException(errorMessage, ex);
+        }
         catch (HttpRequestException ex)
         {
-            var error = Error.BadRequest($"Error during API request: {ex.Message}");
-            logger.LogError(error.Message);
-            return error;
+            var errorMessage = $"Error during API request: {ex.Message}";
+            logger.LogWarning(errorMessage);
+            throw new TransientProviderException(errorMessage, ex);
+        }
+        catch (TransientProviderException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -44,5 +70,11 @@ public class GreenApiHttpClient(ILogger<GreenApiSendService> logger)
             logger.LogError(error.Message);
             return error;
         }
+    }
+
+    private static bool IsTransientStatusCode(HttpStatusCode statusCode)
+    {
+        var status = (int)statusCode;
+        return statusCode == HttpStatusCode.TooManyRequests || status >= 500;
     }
 }

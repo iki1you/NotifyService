@@ -1,5 +1,6 @@
 ﻿using Abstractions.Models;
 using Microsoft.Extensions.Logging;
+using Queue.Constants;
 using Queue.Interfaces;
 using Queue.Services;
 using RabbitMQ.Client;
@@ -42,7 +43,7 @@ namespace Queue
                     durable: true,
                     exclusive: false,
                     autoDelete: false,
-                    arguments: null);
+                    arguments: QueueNames.GetQueueArguments(queueName));
 
                 // Настройка prefetch (количество сообщений для обработки одновременно)
                 await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
@@ -99,6 +100,11 @@ namespace Queue
                     consumer: consumer);
 
                 _logger.LogInformation("Started consuming from queue {QueueName}", queueName);
+
+                using var cancellationRegistration = cancellationToken.Register(() =>
+                {
+                    _ = StopConsuming();
+                });
 
                 // Ожидаем отмены
                 await Task.Delay(Timeout.Infinite, cancellationToken);

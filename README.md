@@ -13,6 +13,17 @@ docker compose ps
 docker compose logs -f
 ```
 
+## Масштабирование воркеров
+
+Для горизонтального масштабирования сервиса `workers` используйте `--scale`:
+
+```powershell
+# Пример: 3 экземпляра workers
+docker compose --env-file .env.development up -d --build --scale workers=3
+```
+
+Примечание: для корректного масштабирования у `workers` не должно быть фиксированного `container_name`.
+
 ## Полезные адреса
 
 - API: `http://localhost:5000`
@@ -20,8 +31,6 @@ docker compose logs -f
 - Grafana: `http://localhost:3000` (admin/admin)
 - Prometheus: `http://localhost:9090`
 - RabbitMQ UI: `http://localhost:15672` (guest/guest)
-
-## Тестирование: как запускать и что для чего
 
 ### Что поднимается в `Development`
 
@@ -34,74 +43,43 @@ docker compose logs -f
 
 Это нужно, чтобы локально прогонять сценарии отправки и нагрузки в воспроизводимой среде.
 
-### 1) Базовый запуск среды для тестов
+## Нагрузочное тестирование (WhatsApp, 3 воркера)
 
-```powershell
-# Поднять все сервисы для локального тестирования
-docker compose --env-file .env.development up -d --build
+Рекомендуемый сценарий проверки под нагрузкой:
 
-# Проверить, что контейнеры в статусе Up
-docker compose ps
+1. Поднять систему и 3 экземпляра workers:
+   `docker compose --env-file .env.development --profile development up -d --build --scale workers=3`
+2. Запустить NBomber с профилем 50 RPS на API:
+   - `TEST_TYPE=target-rps`
+   - `TARGET_RPS=50`
+   - `TARGET_DURATION_SECONDS=120`
+   - `VERIFY_RATE_LIMIT=true`
+   - `MAX_PROVIDER_RPS=10`
+   - `ALLOWED_RPS_TOLERANCE_PERCENT=5`
+   - `VERIFY_PROMETHEUS_METRICS=true`
+   - `docker compose --profile loadtest run --rm nbomber`
 
-# При необходимости посмотреть логи
-docker compose logs -f api workers
-```
+Что проверить после прогона:
 
-### 2) Нагрузочное тестирование через NBomber
+- фактический RPS к провайдеру не превышает лимит (например, 10 RPS),
+- нет дублей сообщений (по `requestId`/`messageTaskId` в БД и логах),
+- при остановке одного экземпляра `workers` остальные продолжают обработку без потерь.
 
-`NBomber` запускается отдельным контейнером (`profile: loadtest`) и бьет в API.
+## Метрики RabbitMQ в Grafana
 
-```powershell
-# Запуск NBomber с настройками по умолчанию (обычно smoke)
-docker compose --env-file .env.development --profile loadtest run --rm nbomber
-```
+RabbitMQ consumer-метрики уже добавлены в дашборд `NotifyService Workers Observability`:
 
-### Параметры NBomber (переменные окружения)
+- `Consumers total`,
+- `Consumers by queue`,
+- `Consumer utilisation by queue`,
+- backlog/ack/redelivery панели по очередям.
 
-Можно переопределять поведение теста прямо в команде:
+## Рекомендации по количеству воркеров на канал
 
-- `TEST_TYPE` — тип профиля нагрузки: `smoke | load | stress | spike | soak`
-- `API_URL` — базовый URL API для теста (по умолчанию внутри сети docker)
-- `TEST_RUN` / `TEST_RUN_ID` — идентификатор прогона в логах
-- `API_BEARER_TOKEN` — Bearer токен для авторизации запросов в API
-- `SLOW_MS` — порог «медленного» запроса для вывода trace в лог
-- `THINK_TIME_MIN`, `THINK_TIME_MAX` — пауза между шагами сценария (в секундах)
+Ориентируйтесь на лимит провайдера и среднее время обработки одного сообщения:
 
-Пример запуска `load`:
+- WhatsApp (greenapi, лимит ~10 RPS): обычно `2-4` экземпляра workers.
+- Telegram (лимит выше): обычно `1-3` экземпляра workers.
+- Email: зависит от SMTP/DashaMail лимитов, обычно `1-2` экземпляра workers.
 
-```powershell
-docker compose --env-file .env.development --profile loadtest run --rm `
-  -e TEST_TYPE=load `
-  -e TEST_RUN=local-load `
-  -e API_BEARER_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwcm9qZWN0OjEiLCJqdGkiOiI5NWQ3ZDkyMDY3MWU0ZTA5YTgzNmIyNWMxNzNiOWUzYyIsImlzcyI6Ik5vdGlmeVNlcnZpY2UiLCJhdWQiOiJOb3RpZnlTZXJ2aWNlQ2xpZW50cyIsIlByb2plY3RJZCI6MSwiaWF0IjoxNzc1OTAxNTMzLCJleHAiOjI1MzQwMjMwMDc5OX0.moaJzIvldtxTvrpzvfuuWPL0uk17KV8wevM3modgPNw `
-  -e SLOW_MS=400 `
-  -e THINK_TIME_MIN=0.2 `
-  -e THINK_TIME_MAX=0.8 `
-  nbomber
-```
-
-### Что проверяет сценарий NBomber
-
-Сценарий `notification_flow` делает:
-
-1. `POST /api/notifications` — создает задачу отправки (ожидается `202 Accepted`).
-2. Пауза (`think time`) для имитации реального пользователя/клиента.
-3. `GET /api/notifications/status/{id}` — проверяет статус созданной задачи (ожидается `200 OK`).
-
-Если запрос дольше `SLOW_MS`, в лог пишется строка с `trace_id` (`[nbomber-slow-trace]`) для дальнейшего анализа в observability.
-
-### Где смотреть результаты
-
-- Логи запуска NBomber — в консоли команды `docker compose ... run --rm nbomber`.
-- Метрики и графики — в Grafana: `http://localhost:3000`.
-- Технические метрики и scrape-данные — в Prometheus: `http://localhost:9090`.
-
-## Остановка
-
-```powershell
-# Остановить и удалить контейнеры
-docker compose down
-
-# Остановить и удалить контейнеры + тома
-docker compose down -v
-```
+Правило: начинать с `2` экземпляров, затем увеличивать только при устойчивом росте backlog, контролируя provider RPS и отсутствие дублей.

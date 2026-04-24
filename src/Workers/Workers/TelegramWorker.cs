@@ -1,4 +1,4 @@
-using Abstractions.Models;
+﻿using Abstractions.Models;
 using Abstractions.Models.Enums;
 using Adapters.GreenAPI.Models.Requests;
 using Adapters.Interfaces;
@@ -15,21 +15,25 @@ namespace Workers.Workers
     public class TelegramWorker : SingleConsumerWorker<MessageTaskDTO>
     {
         private readonly ILogger<TelegramWorker> _logger;
+        private readonly IRateLimiter _rateLimiter;
 
         public TelegramWorker(
             ILogger<TelegramWorker> logger,
             IServiceScopeFactory serviceScopeFactory,
             IRabbitMqConnectionFactory connectionFactory,
+            IRateLimiter rateLimiter,
             IConfiguration configuration)
             : base(
                 logger,
                 serviceScopeFactory,
                 connectionFactory,
                 QueueNames.GetChannelQueueName(ChannelType.Telegram),
-                "Telegram Worker",
-                prefetchCount: configuration.GetValue("Workers:PrefetchCount", (ushort)30))
+                nameof(TelegramWorker),
+                AdapterType.GreenAPI,
+                SingleConsumerWorkerSettings.FromConfiguration(configuration))
         {
             _logger = logger;
+            _rateLimiter = rateLimiter;
         }
 
         protected override async Task ProcessMessageAsync(MessageTaskDTO messageTask)
@@ -41,46 +45,40 @@ namespace Workers.Workers
 
             using var scope = _serviceScopeFactory.CreateScope();
             var credentialRepository = scope.ServiceProvider.GetRequiredService<ICredentialRepository>();
+            var messageRepository = scope.ServiceProvider.GetRequiredService<IMessageRepository>();
+
+            var existingTask = await messageRepository.GetMessageTaskByIdAsync(messageTask.Id);
+            if (existingTask == null)
+            {
+                throw new InvalidOperationException($"Message task {messageTask.Id} not found for request {messageTask.RequestId}");
+            }
+
+            if (existingTask.Status == MessageTaskStatus.Sent)
+            {
+                _logger.LogInformation(
+                    "Telegram Worker: Task {TaskId} for request {RequestId} already sent. Skipping duplicate delivery",
+                    messageTask.Id,
+                    messageTask.RequestId);
+                return;
+            }
 
             var credential = await credentialRepository.GetByIdAsync(messageTask.CredentialId);
 
             if (credential == null)
             {
-                await PublishStatusAsync(new MessageTaskStatusDTO
-                {
-                    MessageTaskId = messageTask.Id,
-                    RequestId = messageTask.RequestId,
-                    TraceId = traceId,
-                    Status = MessageTaskStatus.Failed,
-                    ErrorMessage = $"Credential with id {messageTask.CredentialId} not found",
-                    StatusChangedAt = DateTime.UtcNow
-                });
-
-                _logger.LogWarning("Telegram Worker: Credential with id {CredentialId} not found for task {TaskId}",
-                    messageTask.CredentialId, messageTask.Id);
-                return;
+                throw new InvalidOperationException(
+                    $"Credential with id {messageTask.CredentialId} not found for task {messageTask.Id}, request {messageTask.RequestId}");
             }
 
             if (credential.AdapterType != AdapterType.GreenAPI)
             {
-                await PublishStatusAsync(new MessageTaskStatusDTO
-                {
-                    MessageTaskId = messageTask.Id,
-                    RequestId = messageTask.RequestId,
-                    TraceId = traceId,
-                    Status = MessageTaskStatus.Failed,
-                    ErrorMessage = $"Adapter {credential.AdapterType} is not supported for channel {ChannelType.Telegram}",
-                    StatusChangedAt = DateTime.UtcNow
-                });
-
-                _logger.LogWarning(
-                    "Telegram Worker: Unsupported adapter {AdapterType} for task {TaskId}",
-                    credential.AdapterType,
-                    messageTask.Id);
-                return;
+                throw new InvalidOperationException(
+                    $"Adapter {credential.AdapterType} is not supported for channel {ChannelType.Telegram} for task {messageTask.Id}, request {messageTask.RequestId}");
             }
 
             var greenApiSendService = scope.ServiceProvider.GetRequiredService<IGreenApiSendService>();
+
+            await _rateLimiter.WaitAsync(ChannelType.Telegram, AdapterType.TelegramAPI);
 
             var request = new GreenApiSendMessageRequest
             {
@@ -94,20 +92,12 @@ namespace Workers.Workers
 
             if (!result.IsSuccess)
             {
-                await PublishStatusAsync(new MessageTaskStatusDTO
-                {
-                    MessageTaskId = messageTask.Id,
-                    RequestId = messageTask.RequestId,
-                    TraceId = traceId,
-                    Status = MessageTaskStatus.Failed,
-                    ErrorMessage = result.Error?.Message,
-                    StatusChangedAt = DateTime.UtcNow
-                });
-
-                _logger.LogError("Telegram Worker: Failed to send message for task {TaskId}. Error: {Error}",
-                    messageTask.Id, result.Error?.Message);
-                return;
+                throw new InvalidOperationException(
+                    $"Telegram provider failed for task {messageTask.Id}, request {messageTask.RequestId}. Error: {result.Error?.Message}");
             }
+
+            existingTask.Status = MessageTaskStatus.Sent;
+            await messageRepository.UpdateMessageTaskAsync(existingTask);
 
             await PublishStatusAsync(new MessageTaskStatusDTO
             {

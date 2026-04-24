@@ -1,4 +1,4 @@
-services:
+﻿services:
   # Linux host requirement:
   # sudo sysctl -w vm.max_map_count=262144
 
@@ -22,11 +22,27 @@ services:
     networks:
       - notifyservice_network
 
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: notifyservice_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - notifyservice_network
+
   # RabbitMQ Message Broker
   rabbitmq:
     image: rabbitmq:4.2.5-management-alpine
     container_name: notifyservice_rabbitmq
-    command: /bin/sh -c "rabbitmq-plugins enable --offline rabbitmq_prometheus && rabbitmq-server"
+    command: /bin/sh -c "rabbitmq-plugins enable --offline rabbitmq_prometheus rabbitmq_delayed_message_exchange && rabbitmq-server"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -48,4 +64,6 @@ volumes:
   postgres_data:
     driver: local
   rabbitmq_data:
+    driver: local
+  redis_data:
     driver: local

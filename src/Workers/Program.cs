@@ -1,4 +1,4 @@
-using Adapters.Extensions;
+﻿using Adapters.Extensions;
 using Data.Extensions;
 using Queue.Extensions;
 using Serilog;
@@ -11,6 +11,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Workers.Workers;
+using Abstractions.Models.Enums;
 
 SerilogBootstrapper.ConfigureBootstrapLogger("NotifyService.Workers");
 
@@ -48,7 +49,8 @@ try
             metrics
                 .AddHttpClientInstrumentation()
                 .AddMeter(QueueWorkerMetrics.MeterName)
-                .AddMeter(GreenApiMetrics.MeterName);
+                .AddMeter(GreenApiMetrics.MeterName)
+                .AddMeter(RateLimitMetrics.MeterName);
 
             metrics.AddOtlpExporter(options =>
             {
@@ -64,11 +66,29 @@ try
     builder.Services.AddDataServices(builder.Configuration);
     builder.Services.AddAdapterServices();
     builder.Services.AddRabbitMqServices(builder.Configuration);
+    builder.Services.AddRateLimitingServices(builder.Configuration);
 
-    builder.Services.AddHostedService<GreenApiWorker>();
-    builder.Services.AddHostedService<MAXWorker>();
-    builder.Services.AddHostedService<TelegramWorker>();
-    builder.Services.AddHostedService<EmailWorker>();
+    var enabledChannels = ResolveEnabledChannels(builder.Configuration);
+
+    if (enabledChannels.Count == 0 || enabledChannels.Contains(ChannelType.WhatsApp))
+    {
+        builder.Services.AddHostedService<GreenApiWorker>();
+    }
+
+    if (enabledChannels.Count == 0 || enabledChannels.Contains(ChannelType.MAX))
+    {
+        builder.Services.AddHostedService<MAXWorker>();
+    }
+
+    if (enabledChannels.Count == 0 || enabledChannels.Contains(ChannelType.Telegram))
+    {
+        builder.Services.AddHostedService<TelegramWorker>();
+    }
+
+    if (enabledChannels.Count == 0 || enabledChannels.Contains(ChannelType.Email))
+    {
+        builder.Services.AddHostedService<EmailWorker>();
+    }
 
     var host = builder.Build();
     host.Run();
@@ -80,4 +100,44 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static HashSet<ChannelType> ResolveEnabledChannels(IConfiguration configuration)
+{
+    var configuredChannels = configuration["Workers:Channels"];
+    var singleChannel = configuration["CHANNEL"];
+
+    var rawValue = string.IsNullOrWhiteSpace(configuredChannels)
+        ? singleChannel
+        : configuredChannels;
+
+    if (string.IsNullOrWhiteSpace(rawValue))
+    {
+        return [];
+    }
+
+    var channels = new HashSet<ChannelType>();
+    var parts = rawValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    foreach (var part in parts)
+    {
+        if (Enum.TryParse<ChannelType>(part, ignoreCase: true, out var parsedChannel))
+        {
+            channels.Add(parsedChannel);
+            continue;
+        }
+
+        var normalizedValue = part.Trim();
+
+        foreach (var enumValue in Enum.GetValues<ChannelType>())
+        {
+            if (string.Equals(enumValue.ToString(), normalizedValue, StringComparison.OrdinalIgnoreCase))
+            {
+                channels.Add(enumValue);
+                break;
+            }
+        }
+    }
+
+    return channels;
 }

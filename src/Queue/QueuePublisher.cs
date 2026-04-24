@@ -1,4 +1,5 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Queue.Constants;
 using Queue.Interfaces;
 using Queue.Services;
 using Queue.Telemetry;
@@ -55,7 +56,7 @@ namespace Queue
                     durable: true,
                     exclusive: false,
                     autoDelete: false,
-                    arguments: null);
+                    arguments: QueueNames.GetQueueArguments(queueName));
 
                 var messageJson = JsonSerializer.Serialize(message, _jsonOptions);
                 var body = Encoding.UTF8.GetBytes(messageJson);

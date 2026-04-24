@@ -2,6 +2,8 @@
 
 var settings = TestSettings.FromEnvironment();
 
+await RateLimitVerification.PrepareAsync(settings);
+
 using var httpClient = new HttpClient
 {
     BaseAddress = new Uri(settings.ApiUrl)
@@ -9,8 +11,10 @@ using var httpClient = new HttpClient
 
 var scenario = NotificationScenarioFactory
     .Create(settings, httpClient)
-    .WithLoadSimulations(LoadSimulationFactory.Get(settings.TestType));
+    .WithLoadSimulations(LoadSimulationFactory.Get(settings));
 
 NBomberRunner
     .RegisterScenarios(scenario)
     .Run();
+
+await RateLimitVerification.VerifyAsync(settings);

@@ -26,6 +26,9 @@ namespace Queue.Telemetry
         private static readonly Counter<long> FailedTotal =
             Meter.CreateCounter<long>("failed.total");
 
+        private static readonly Counter<long> NotifyRetryAttemptsTotal =
+            Meter.CreateCounter<long>("notify_retry_attempts_total");
+
         public static void RecordProcessingDuration(double valueMs, string workerName, string queueName, string messageType)
         {
             ProcessingDurationMs.Record(valueMs,
@@ -72,6 +75,14 @@ namespace Queue.Telemetry
                 new KeyValuePair<string, object?>("worker", workerName),
                 new KeyValuePair<string, object?>("queue", queueName),
                 new KeyValuePair<string, object?>("message_type", messageType));
+        }
+
+        public static void IncrementNotifyRetryAttempts(string channel, string adapter, string status)
+        {
+            NotifyRetryAttemptsTotal.Add(1,
+                new KeyValuePair<string, object?>("channel", channel),
+                new KeyValuePair<string, object?>("adapter", adapter),
+                new KeyValuePair<string, object?>("status", status));
         }
     }
 }

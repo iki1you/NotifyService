@@ -1,4 +1,4 @@
-using Abstractions.Models;
+﻿using Abstractions.Models;
 using Data.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,7 +23,14 @@ namespace Orchestrator.Workers
             ILogger<MessageStatusWorker> logger,
             IServiceScopeFactory serviceScopeFactory,
             IRabbitMqConnectionFactory connectionFactory)
-            : base(logger, serviceScopeFactory, connectionFactory, QueueNames.MessageStatusUpdates, "MessageStatusWorker")
+            : base(
+                logger,
+                serviceScopeFactory,
+                connectionFactory,
+                QueueNames.MessageStatusUpdates,
+                nameof(MessageStatusWorker),
+                "status-worker",
+                new SingleConsumerWorkerSettings())
         {
             _logger = logger;
         }

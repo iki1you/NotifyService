@@ -3,10 +3,14 @@ using NBomber.Contracts;
 
 internal static class LoadSimulationFactory
 {
-    public static LoadSimulation[] Get(string testType)
+    public static LoadSimulation[] Get(TestSettings settings)
     {
-        return testType switch
+        return settings.TestType switch
         {
+            "target-rps" =>
+            [
+                Simulation.Inject(rate: settings.TargetRps, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(settings.TargetDurationSeconds))
+            ],
             "smoke" =>
             [
                 Simulation.KeepConstant(copies: 5, during: TimeSpan.FromMinutes(1))
@@ -37,7 +41,28 @@ internal static class LoadSimulationFactory
             [
                 Simulation.KeepConstant(copies: 50, during: TimeSpan.FromMinutes(30))
             ],
-            _ => throw new InvalidOperationException($"Unsupported TEST_TYPE='{testType}'. Use smoke|load|stress|spike|soak")
+            "rate-limit" =>
+            [
+                Simulation.RampingConstant(copies: 200, during: TimeSpan.FromSeconds(20)),
+                Simulation.KeepConstant(copies: 200, during: TimeSpan.FromMinutes(2)),
+                Simulation.RampingConstant(copies: 0, during: TimeSpan.FromSeconds(20))
+            ],
+            _ => throw new InvalidOperationException($"Unsupported TEST_TYPE='{settings.TestType}'. Use smoke|load|stress|spike|soak|rate-limit|target-rps")
+        };
+    }
+
+    public static double GetPlannedDurationSeconds(TestSettings settings)
+    {
+        return settings.TestType switch
+        {
+            "target-rps" => settings.TargetDurationSeconds,
+            "smoke" => TimeSpan.FromMinutes(1).TotalSeconds,
+            "load" => TimeSpan.FromMinutes(9).TotalSeconds,
+            "stress" => TimeSpan.FromMinutes(6).TotalSeconds,
+            "spike" => TimeSpan.FromMinutes(3.5).TotalSeconds,
+            "soak" => TimeSpan.FromMinutes(30).TotalSeconds,
+            "rate-limit" => TimeSpan.FromSeconds(160).TotalSeconds,
+            _ => 1d
         };
     }
 }

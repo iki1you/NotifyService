@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Queue.Configuration;
+using Queue.Constants;
 using RabbitMQ.Client;
 
 namespace Queue.Services
@@ -45,6 +46,63 @@ namespace Queue.Services
             };
 
             _connection = await factory.CreateConnectionAsync(cancellationToken);
+
+            await using var channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+
+            await channel.ExchangeDeclareAsync(
+                exchange: QueueNames.RetryExchange,
+                type: QueueNames.DelayedExchangeType,
+                durable: true,
+                autoDelete: false,
+                arguments: new Dictionary<string, object?>
+                {
+                    ["x-delayed-type"] = ExchangeType.Direct
+                },
+                cancellationToken: cancellationToken);
+
+            await channel.ExchangeDeclareAsync(
+                exchange: QueueNames.DeadLetterExchange,
+                type: ExchangeType.Direct,
+                durable: true,
+                autoDelete: false,
+                arguments: null,
+                cancellationToken: cancellationToken);
+
+            foreach (var channelType in QueueNames.RetryManagedChannels)
+            {
+                var queueName = QueueNames.GetChannelQueueName(channelType);
+                var dlqName = QueueNames.GetChannelDlqName(channelType);
+
+                await channel.QueueDeclareAsync(
+                    queue: queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: QueueNames.GetQueueArguments(queueName),
+                    cancellationToken: cancellationToken);
+
+                await channel.QueueDeclareAsync(
+                    queue: dlqName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null,
+                    cancellationToken: cancellationToken);
+
+                await channel.QueueBindAsync(
+                    queue: dlqName,
+                    exchange: QueueNames.DeadLetterExchange,
+                    routingKey: queueName,
+                    arguments: null,
+                    cancellationToken: cancellationToken);
+
+                await channel.QueueBindAsync(
+                    queue: queueName,
+                    exchange: QueueNames.RetryExchange,
+                    routingKey: queueName,
+                    arguments: null,
+                    cancellationToken: cancellationToken);
+            }
 
             _logger.LogInformation("RabbitMQ connection created successfully");
         }

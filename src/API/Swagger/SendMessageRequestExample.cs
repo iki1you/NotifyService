@@ -21,7 +21,7 @@ namespace API.Swagger
                     },
                     new RecipientItem
                     {
-                        Channel = ChannelType.WhatsApp,
+                        Channel = ChannelType.MAX,
                         Recipient = "+79991234567"
                     }
                 },

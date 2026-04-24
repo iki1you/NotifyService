@@ -14,7 +14,12 @@ namespace Adapters.Services
             _credentialRepository = credentialRepository;
         }
 
-        public async Task<OperationResult<GreenApiOptions>> GetCredential(long credentialId)
+        public Task<OperationResult<GreenApiOptions>> GetCredential(long credentialId)
+        {
+            return GetCredential<GreenApiOptions>(credentialId);
+        }
+
+        public async Task<OperationResult<TCredentialOptions>> GetCredential<TCredentialOptions>(long credentialId)
         {
             var credential = await _credentialRepository.GetByIdAsync(credentialId);
 
@@ -30,7 +35,7 @@ namespace Adapters.Services
 
             try
             {
-                var options = JsonSerializer.Deserialize<GreenApiOptions>(credential.Config);
+                var options = JsonSerializer.Deserialize<TCredentialOptions>(credential.Config);
 
                 if (options == null)
                 {
