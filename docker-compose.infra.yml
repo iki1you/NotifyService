@@ -42,7 +42,7 @@
   rabbitmq:
     image: rabbitmq:4.2.5-management-alpine
     container_name: notifyservice_rabbitmq
-    command: /bin/sh -c "rabbitmq-plugins enable --offline rabbitmq_prometheus rabbitmq_delayed_message_exchange && rabbitmq-server"
+    command: /bin/sh -c "if [ ! -f /plugins/rabbitmq_delayed_message_exchange-4.2.0.ez ]; then wget -O /plugins/rabbitmq_delayed_message_exchange-4.2.0.ez https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases/download/v4.2.0/rabbitmq_delayed_message_exchange-4.2.0.ez; fi; rabbitmq-plugins enable --offline rabbitmq_prometheus rabbitmq_delayed_message_exchange && rabbitmq-server"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -52,6 +52,7 @@
       - "15692:15692" # Prometheus metrics
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_plugins:/plugins
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
@@ -64,6 +65,8 @@ volumes:
   postgres_data:
     driver: local
   rabbitmq_data:
+    driver: local
+  rabbitmq_plugins:
     driver: local
   redis_data:
     driver: local

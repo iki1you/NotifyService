@@ -27,6 +27,7 @@
     <ProjectReference Include="..\Infrastracture\Abstractions.csproj" />
     <ProjectReference Include="..\Logging\Logging.csproj" />
     <ProjectReference Include="..\Queue\Queue.csproj" />
+    <ProjectReference Include="..\RateLimiter\RateLimiter.csproj" />
   </ItemGroup>
 
   <ItemGroup>

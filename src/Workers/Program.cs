@@ -5,6 +5,8 @@ using Serilog;
 using Shared.Logging;
 using Shared.Logging.Extensions;
 using Queue.Telemetry;
+using RateLimiter.Telemetry;
+using RateLimiter.Extensions;
 using Adapters.GreenAPI.Telemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;

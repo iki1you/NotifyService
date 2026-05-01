@@ -29,8 +29,4 @@
     <ProjectReference Include="..\Queue\Queue.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Metrics\" />
-  </ItemGroup>
-
 </Project>

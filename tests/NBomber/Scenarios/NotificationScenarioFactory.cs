@@ -23,6 +23,21 @@ internal static class NotificationScenarioFactory
                     {
                         channel = "whatsApp",
                         recipient = $"+77777777777"
+                    },
+                    new
+                    {
+                        channel = "MAX",
+                        recipient = $"+77777777777"
+                    },
+                    new
+                    {
+                        channel = "Email",
+                        recipient = $"+77777777777"
+                    },
+                    new
+                    {
+                        channel = "Telegram",
+                        recipient = $"+77777777777"
                     }
                 },
                 message = new

@@ -8,6 +8,7 @@ using Queue.AbstractWorkers;
 using Queue.Constants;
 using Queue.Interfaces;
 using Queue.Services;
+using RateLimiter.Interfaces;
 using System.Diagnostics;
 
 namespace Workers.Workers
@@ -79,6 +80,11 @@ namespace Workers.Workers
             var smtpSendService = scope.ServiceProvider.GetRequiredService<ISmtpSendService>();
 
             await _rateLimiter.WaitAsync(ChannelType.Email, AdapterType.SMTP);
+
+            await _rateLimiter.WaitAsync(
+                ChannelType.Email,
+                AdapterType.SMTP,
+                messageTask.CredentialId.ToString());
 
             var request = new SmtpSendMessageRequest
             {

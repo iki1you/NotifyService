@@ -1,4 +1,4 @@
-﻿{
+{
   "id": null,
   "uid": "notifyservice-workers-observability",
   "title": "NotifyService Workers Observability",
@@ -409,7 +409,7 @@
     {
       "id": 11,
       "type": "timeseries",
-      "title": "Success vs Failed rate (msg/s)",
+      "title": "Rate limit RPS vs Max RPS by provider",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -423,13 +423,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(success_total{queue=~\"$queueRegex\"}[5m]))",
-          "legendFormat": "success"
+          "expr": "sum by (channel, provider) (rate(notify_rate_limit_acquired_total[1m])) or sum by (channel, provider) (rate(notify_rate_limit_acquired[1m]))",
+          "legendFormat": "actual {{channel}}/{{provider}}"
         },
         {
           "refId": "B",
-          "expr": "sum(rate(failed_total{queue=~\"$queueRegex\"}[5m]))",
-          "legendFormat": "failed"
+          "expr": "max by (channel, provider) (notify_rate_limit_max_rps)",
+          "legendFormat": "max {{channel}}/{{provider}}"
         }
       ],
       "fieldConfig": {
@@ -451,7 +451,7 @@
     {
       "id": 12,
       "type": "timeseries",
-      "title": "Retries vs Nack rate (msg/s)",
+      "title": "Rate limit waits & exceeded rate (1m)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -465,20 +465,50 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(retries_total{queue=~\"$queueRegex\"}[5m]))",
-          "legendFormat": "retries"
+          "expr": "sum by (channel, provider) (rate(notify_rate_limit_exceeded_total[1m]))",
+          "legendFormat": "exceeded {{channel}}/{{provider}}"
         },
         {
           "refId": "B",
-          "expr": "sum(rate(nack_total{queue=~\"$queueRegex\"}[5m]))",
-          "legendFormat": "nack"
+          "expr": "sum by (channel, provider) (rate(notify_rate_limit_wait_time_ms_sum[1m]))",
+          "legendFormat": "wait_ms_sum {{channel}}/{{provider}}"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (channel, provider) (rate(notify_rate_limit_wait_time_sum[1m]))",
+          "legendFormat": "wait_sum {{channel}}/{{provider}}"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "ops"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "wait_ms_sum"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "wait_sum"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -596,6 +626,90 @@
     {
       "id": 16,
       "type": "timeseries",
+      "title": "Success vs Failed rate (msg/s)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 75
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(success_total{queue=~\"$queueRegex\"}[5m]))",
+          "legendFormat": "success"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(failed_total{queue=~\"$queueRegex\"}[5m]))",
+          "legendFormat": "failed"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "Retries vs Nack rate (msg/s)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 75
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(retries_total{queue=~\"$queueRegex\"}[5m]))",
+          "legendFormat": "retries"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(nack_total{queue=~\"$queueRegex\"}[5m]))",
+          "legendFormat": "nack"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
       "title": "Retry attempts rate by channel/adapter/status (1m)",
       "datasource": {
         "type": "prometheus",
@@ -605,7 +719,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 75
+        "y": 84
       },
       "targets": [
         {
@@ -631,7 +745,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 19,
       "type": "timeseries",
       "title": "DLQ size by queue",
       "datasource": {
@@ -642,7 +756,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 85
+        "y": 94
       },
       "targets": [
         {
@@ -668,7 +782,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 20,
       "type": "stat",
       "title": "Retries exhausted (24h)",
       "datasource": {
@@ -679,7 +793,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 85
+        "y": 94
       },
       "targets": [
         {

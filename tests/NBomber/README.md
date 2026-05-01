@@ -116,3 +116,13 @@ dotnet run -c Release
 ```
 
 В этом случае нужно вручную обеспечить доступность API/WireMock/Prometheus и задать переменные окружения.
+
+
+docker compose --env-file .env.development --profile loadtest run --rm `
+  -e TEST_TYPE=load `
+  -e TEST_RUN=local-load `
+  -e API_BEARER_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwcm9qZWN0OjEiLCJqdGkiOiI3NTg3NzhlZGU4YjA0YWRiYTYyMjhmODMxZDIxMWM0YyIsImlzcyI6Ik5vdGlmeVNlcnZpY2UiLCJhdWQiOiJOb3RpZnlTZXJ2aWNlQ2xpZW50cyIsIlByb2plY3RJZCI6MSwiaWF0IjoxNzc3NjM0ODk4LCJleHAiOjI1MzQwMjMwMDc5OX0.iklk2nsBpL8bxdHrmBQ3IWolxw5oJLNlpn6vVj43izQ `
+  -e SLOW_MS=400 `
+  -e THINK_TIME_MIN=0.2 `
+  -e THINK_TIME_MAX=0.8 `
+  nbomber

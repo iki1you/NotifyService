@@ -8,6 +8,7 @@ using Queue.Constants;
 using Queue.AbstractWorkers;
 using Queue.Interfaces;
 using Queue.Services;
+using RateLimiter.Interfaces;
 using System.Diagnostics;
 
 namespace Workers.Workers
@@ -82,6 +83,11 @@ namespace Workers.Workers
             var greenApiSendService = scope.ServiceProvider.GetRequiredService<IGreenApiSendService>();
 
             await _rateLimiter.WaitAsync(ChannelType.WhatsApp, AdapterType.GreenAPI);
+
+            await _rateLimiter.WaitAsync(
+                ChannelType.WhatsApp,
+                AdapterType.GreenAPI,
+                messageTask.CredentialId.ToString());
 
             var request = new GreenApiSendMessageRequest
             {

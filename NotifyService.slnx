@@ -7,6 +7,7 @@
   <Folder Name="/Persistence/">
     <Project Path="src/Data/Data.csproj" />
     <Project Path="src/Queue/Queue.csproj" />
+    <Project Path="src/RateLimiter/RateLimiter.csproj" />
   </Folder>
   <Folder Name="/Shared/">
     <Project Path="src/Infrastracture/Abstractions.csproj" />

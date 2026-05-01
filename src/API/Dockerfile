@@ -14,6 +14,7 @@ COPY ["Logging/Logging.csproj", "Logging/"]
 COPY ["Orchestrator/Orchestrator.csproj", "Orchestrator/"]
 COPY ["Queue/Queue.csproj", "Queue/"]
 COPY ["Adapters/Adapters.csproj", "Adapters/"]
+COPY ["RateLimiter/RateLimiter.csproj", "RateLimiter/"]
 
 RUN dotnet restore "API/API.csproj"
 

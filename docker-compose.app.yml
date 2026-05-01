@@ -1,4 +1,29 @@
-﻿services:
+﻿x-worker-environment: &worker-environment
+  DOTNET_ENVIRONMENT: ${APP_ENV:-Development}
+  GREENAPI_MOCK_URL: ${GREENAPI_MOCK_URL:-}
+  Redis__ConnectionString: ${REDIS_CONNECTION_STRING:-redis:6379}
+  OpenTelemetry__Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4317}
+  TZ: UTC
+
+x-worker-defaults: &worker-defaults
+  build:
+    context: ./src
+    dockerfile: Workers/Dockerfile
+  environment: *worker-environment
+  depends_on:
+    postgres:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    alloy:
+      condition: service_started
+  networks:
+    - notifyservice_network
+  restart: on-failure
+
+services:
   # API Service
   api:
     build:
@@ -26,103 +51,31 @@
 
   # Workers Service (WhatsApp)
   worker-whatsapp:
-    build:
-      context: ./src
-      dockerfile: Workers/Dockerfile
+    <<: *worker-defaults
     environment:
-      DOTNET_ENVIRONMENT: ${APP_ENV:-Development}
+      <<: *worker-environment
       CHANNEL: WhatsApp
-      GREENAPI_MOCK_URL: ${GREENAPI_MOCK_URL:-}
-      Redis__ConnectionString: ${REDIS_CONNECTION_STRING:-redis:6379}
-      OpenTelemetry__Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4317}
-      TZ: UTC
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      alloy:
-        condition: service_started
-    networks:
-      - notifyservice_network
-    restart: on-failure
 
   # Workers Service (Telegram)
   worker-telegram:
-    build:
-      context: ./src
-      dockerfile: Workers/Dockerfile
+    <<: *worker-defaults
     environment:
-      DOTNET_ENVIRONMENT: ${APP_ENV:-Development}
+      <<: *worker-environment
       CHANNEL: Telegram
-      GREENAPI_MOCK_URL: ${GREENAPI_MOCK_URL:-}
-      Redis__ConnectionString: ${REDIS_CONNECTION_STRING:-redis:6379}
-      OpenTelemetry__Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4317}
-      TZ: UTC
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      alloy:
-        condition: service_started
-    networks:
-      - notifyservice_network
-    restart: on-failure
 
   # Workers Service (Email)
   worker-email:
-    build:
-      context: ./src
-      dockerfile: Workers/Dockerfile
+    <<: *worker-defaults
     environment:
-      DOTNET_ENVIRONMENT: ${APP_ENV:-Development}
+      <<: *worker-environment
       CHANNEL: Email
-      GREENAPI_MOCK_URL: ${GREENAPI_MOCK_URL:-}
-      Redis__ConnectionString: ${REDIS_CONNECTION_STRING:-redis:6379}
-      OpenTelemetry__Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4317}
-      TZ: UTC
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      alloy:
-        condition: service_started
-    networks:
-      - notifyservice_network
-    restart: on-failure
 
   # Workers Service (MAX)
   worker-max:
-    build:
-      context: ./src
-      dockerfile: Workers/Dockerfile
+    <<: *worker-defaults
     environment:
-      DOTNET_ENVIRONMENT: ${APP_ENV:-Development}
+      <<: *worker-environment
       CHANNEL: MAX
-      GREENAPI_MOCK_URL: ${GREENAPI_MOCK_URL:-}
-      Redis__ConnectionString: ${REDIS_CONNECTION_STRING:-redis:6379}
-      OpenTelemetry__Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4317}
-      TZ: UTC
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      alloy:
-        condition: service_started
-    networks:
-      - notifyservice_network
-    restart: on-failure
 
   wiremock:
     build:
@@ -131,6 +84,7 @@
     container_name: notifyservice_wiremock
     profiles:
       - development
+      - loadtest
     environment:
       WIREMOCK_PORT: 8080
       TZ: UTC
@@ -171,7 +125,7 @@
     environment:
       API_URL: ${TARGET_URL:-http://notifyservice_api:8080}
       API_BEARER_TOKEN: ${API_BEARER_TOKEN:-}
-      TEST_TYPE: ${TEST_TYPE:-rate-limit}
+      TEST_TYPE: ${TEST_TYPE:-load}
       TEST_RUN: ${TEST_RUN:-notifyservice-local}
       TEST_RUN_ID: ${TEST_RUN_ID:-notifyservice-local}
       SLOW_MS: ${SLOW_MS:-500}
