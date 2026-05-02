@@ -6,6 +6,7 @@ using Serilog;
 using Serilog.Debugging;
 using Serilog.Events;
 using Serilog.Sinks.Grafana.Loki;
+using Serilog.Sinks.OpenTelemetry;
 using System.Diagnostics;
 
 namespace Shared.Logging.Extensions;
@@ -82,6 +83,13 @@ public static class SerilogBuilderExtensions
                 continue;
             }
 
+            if (string.Equals(sinkName, "OpenTelemetry", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(sinkName, "Otlp", StringComparison.OrdinalIgnoreCase))
+            {
+                ConfigureOpenTelemetrySink(loggerConfiguration, configuration, sink, applicationName, environmentName);
+                continue;
+            }
+
             if (!string.Equals(sinkName, "File", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -109,6 +117,40 @@ public static class SerilogBuilderExtensions
 
 
         return loggerConfiguration.CreateLogger();
+    }
+
+    private static void ConfigureOpenTelemetrySink(
+        LoggerConfiguration loggerConfiguration,
+        IConfiguration configuration,
+        IConfigurationSection sink,
+        string applicationName,
+        string environmentName)
+    {
+        var endpoint = sink["Args:endpoint"]
+            ?? sink["Args:url"]
+            ?? sink["Args:uri"]
+            ?? configuration["OpenTelemetry:Otlp:Endpoint"];
+
+        if (string.IsNullOrWhiteSpace(endpoint))
+        {
+            return;
+        }
+
+        var protocolValue = sink["Args:protocol"];
+        var protocol = Enum.TryParse<OtlpProtocol>(protocolValue, true, out var parsedProtocol)
+            ? parsedProtocol
+            : OtlpProtocol.Grpc;
+
+        loggerConfiguration.WriteTo.OpenTelemetry(options =>
+        {
+            options.Endpoint = endpoint;
+            options.Protocol = protocol;
+            options.ResourceAttributes = new Dictionary<string, object>
+            {
+                ["service.name"] = applicationName,
+                ["deployment.environment"] = environmentName
+            };
+        });
     }
 
     private static void ConfigureLokiSink(
