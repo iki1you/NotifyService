@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Queue.Configuration;
@@ -17,7 +17,7 @@ namespace Queue.Services
         private readonly RabbitMqSettings _settings;
         private readonly ILogger<RabbitMqConnectionFactory> _logger;
         private IConnection? _connection;
-        private bool _disposed;
+        private bool _started;
 
         public RabbitMqConnectionFactory(
             IOptions<RabbitMqSettings> settings,
@@ -104,17 +104,27 @@ namespace Queue.Services
                     cancellationToken: cancellationToken);
             }
 
+            _started = true;
             _logger.LogInformation("RabbitMQ connection created successfully");
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
-            return Task.CompletedTask;
+            if (!_started) return;
+            _started = false;
+
+            if (_connection != null)
+            {
+                _logger.LogInformation("Closing RabbitMQ connection gracefully...");
+                await _connection.CloseAsync(cancellationToken: cancellationToken);
+                _connection.Dispose();
+                _connection = null;
+            }
         }
 
         public IConnection GetConnection()
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            ObjectDisposedException.ThrowIf(_started, this);
 
             return _connection ?? throw new InvalidOperationException(
                 "RabbitMQ connection is not initialized. Ensure the application has started.");
@@ -122,18 +132,10 @@ namespace Queue.Services
 
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
-
-            _disposed = true;
-
-            if (_connection != null)
+            if (!_started)
             {
-                _logger.LogInformation("Disposing RabbitMQ connection");
-
-                await _connection.CloseAsync();
-                _connection.Dispose();
+                await StopAsync(CancellationToken.None);
             }
-
             GC.SuppressFinalize(this);
         }
     }
